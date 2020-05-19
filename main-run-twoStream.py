@@ -52,7 +52,7 @@ def main_run(dataset, flowModel, rgbModel, stackSize, seqLen, memSize, trainData
                                  ToTensor(), normalize])
 
     vid_seq_train = makeDataset(trainDatasetDir,spatial_transform=spatial_transform,
-                               sequence=False, numSeg=1, stackSize=stackSize, fmt='.jpg', seqLen=seqLen)
+                               sequence=False, numSeg=1, stackSize=stackSize, fmt='.png', seqLen=seqLen)
 
     train_loader = torch.utils.data.DataLoader(vid_seq_train, batch_size=trainBatchSize,
                             shuffle=True, num_workers=4, pin_memory=True)
@@ -61,7 +61,7 @@ def main_run(dataset, flowModel, rgbModel, stackSize, seqLen, memSize, trainData
 
         vid_seq_val = makeDataset(valDatasetDir,
                                    spatial_transform=Compose([Scale(256), CenterCrop(224), ToTensor(), normalize]),
-                                   sequence=False, numSeg=1, stackSize=stackSize, fmt='.jpg', phase='Test',
+                                   sequence=False, numSeg=1, stackSize=stackSize, fmt='.png', phase='Test',
                                    seqLen=seqLen)
 
         val_loader = torch.utils.data.DataLoader(vid_seq_val, batch_size=valBatchSize,
