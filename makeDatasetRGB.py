@@ -28,7 +28,7 @@ def gen_split(root_dir, stackSize, phase):
                     for inst in insts:
                         if inst=='.DS_Store': continue
                         
-                        inst_dir = os.path.join(dir1, inst+"/rgb/") #GTEA61/processed_frames2/S1/close_choco/1/rgb/
+                        inst_dir = os.path.join(dir1, inst+"/rgb") #GTEA61/processed_frames2/S1/close_choco/1/rgb/
                         numFrames = len(glob.glob1(inst_dir, '*.png'))
                         
                         if numFrames >= stackSize:
