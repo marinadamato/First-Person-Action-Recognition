@@ -11,22 +11,31 @@ def gen_split(root_dir, stackSize):
     Dataset = []
     Labels = []
     NumFrames = []
-    root_dir = os.path.join(root_dir, 'frames')
-    for dir_user in sorted(os.listdir(root_dir)):
-        class_id = 0
-        dir = os.path.join(root_dir, dir_user)
-        for target in sorted(os.listdir(dir)):
-            dir1 = os.path.join(dir, target)
-            insts = sorted(os.listdir(dir1))
-            if insts != []:
-                for inst in insts:
-                    inst_dir = os.path.join(dir1, inst)
-                    numFrames = len(glob.glob1(inst_dir, '*.jpg'))
-                    if numFrames >= stackSize:
-                        Dataset.append(inst_dir)
-                        Labels.append(class_id)
-                        NumFrames.append(numFrames)
-            class_id += 1
+    root_dir = os.path.join(root_dir, 'processed_frames2') #GTEA61/processed_frames2/
+    
+    for dir_user in sorted(os.listdir(root_dir)): #S1/
+        if dir_user=='.DS_Store': continue
+        if (phase=='train') ^ (dir_user==root_dir+"S2/"):
+            dir = os.path.join(root_dir, dir_user) #GTEA61/processed_frames2/S1/
+            class_id=0
+            
+            for target in sorted(os.listdir(dir)): #close_choco/
+                if target=='.DS_Store': continue
+                dir1 = os.path.join(dir, target) #GTEA61/processed_frames2/S1/close_choco/
+                
+                insts = sorted(os.listdir(dir1)) #1/
+                if insts != []:
+                    for inst in insts:
+                        if inst=='.DS_Store': continue
+                        
+                        inst_dir = os.path.join(dir1, inst+"/rgb/") #GTEA61/processed_frames2/S1/close_choco/1/rgb/
+                        numFrames = len(glob.glob1(inst_dir, '*.png'))
+                        
+                        if numFrames >= stackSize:
+                            Dataset.append(inst_dir)
+                            Labels.append(class_id)
+                            NumFrames.append(numFrames)
+                class_id += 1
     return Dataset, Labels, NumFrames
 
 class makeDataset(Dataset):
