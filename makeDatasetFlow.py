@@ -45,7 +45,7 @@ def gen_split(root_dir, stackSize, phase):
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform=None, sequence=False, stackSize=5,
-                 train=True, numSeg = 1, fmt='.jpg', phase='train'):
+                 train=True, numSeg = 1, fmt='.png', phase='train'):
         """
         Args:
             root_dir (string): Directory with all the images.
