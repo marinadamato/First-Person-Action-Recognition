@@ -8,36 +8,48 @@ import glob
 import sys
 
 
-def gen_split(root_dir, stackSize):
+def gen_split(root_dir, stackSize, phase):
     DatasetX = []
     DatasetY = []
     DatasetF = []
     Labels = []
     NumFrames = []
-    root_dir = os.path.join(root_dir, 'flow_x')
-    for dir_user in sorted(os.listdir(root_dir)):
-        class_id = 0
-        dir = os.path.join(root_dir, dir_user)
-        for target in sorted(os.listdir(dir)):
-            dir1 = os.path.join(dir, target)
-            insts = sorted(os.listdir(dir1))
-            if insts != []:
-                for inst in insts:
-                    inst_dir = os.path.join(dir1, inst)
-                    numFrames = len(glob.glob1(inst_dir, '*.jpg'))
-                    if numFrames >= stackSize:
-                        DatasetX.append(inst_dir)
-                        DatasetY.append(inst_dir.replace('flow_x', 'flow_y'))
-                        DatasetF.append(inst_dir.replace('flow_x', 'frames'))
-                        Labels.append(class_id)
-                        NumFrames.append(numFrames)
-            class_id += 1
-    return DatasetX, DatasetY, DatasetF, Labels, NumFrames
+    
+    for original_dir in sorted(os.listdir(root_dir)):
+        if (original_dir=='.DS_Store'): continue
+        root_dir1 = os.path.join(root_dir, original_dir) #GTEA61/flow_x_processed/
+        for dir_user in sorted(os.listdir(root_dir1)):
+            if dir_user=='.DS_Store': continue
+            if (phase=='train') ^ (dir_user==root_dir1+"S2/"):
+                class_id = 0
+                dir = os.path.join(root_dir1, dir_user) #GTEA61/processed_frames2/S1/
+                for target in sorted(os.listdir(dir)):
+                    if target=='.DS_Store': continue
+                    dir1 = os.path.join(dir, target) #GTEA61/processed_frames2/S1/close_choco/
+                    insts = sorted(os.listdir(dir1))
+                    if insts != []:
+                        for inst in insts:
+                            if inst=='.DS_Store': continue
+                            inst_dir = os.path.join(dir1, inst) #GTEA61/processed_frames2/S1/close_choco/1/
+                            numFrames = len(glob.glob1(inst_dir, '*.png'))
+                            if (original_dir == 'processed_frames2'):
+                                numFrames = len(glob.glob1(inst_dir+'/rgb/', '*.png'))
+                            if numFrames >= stackSize:
 
+                                if (original_dir == 'flow_x_processed'):
+                                    DatasetX.append(inst_dir)
+                                if (original_dir == 'flow_y_processed'):
+                                    DatasetY.append(inst_dir)
+                                if (original_dir == 'processed_frames2'):   
+                                    DatasetF.append(inst_dir+'/rgb/')
+                                    Labels.append(class_id)
+                                NumFrames.append(numFrames)
+                    class_id += 1
+    return DatasetX, DatasetY, DatasetF, Labels, NumFrames
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform=None, sequence=False, stackSize=5,
-                 train=True, numSeg=5, fmt='.jpg', phase='train', seqLen = 25):
+                 train=True, numSeg=5, fmt='.png', phase='train', seqLen = 25):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -46,7 +58,7 @@ class makeDataset(Dataset):
         """
 
         self.imagesX, self.imagesY, self.imagesF, self.labels, self.numFrames = gen_split(
-            root_dir, stackSize)
+            root_dir, stackSize, phase)
         self.spatial_transform = spatial_transform
         self.train = train
         self.numSeg = numSeg
