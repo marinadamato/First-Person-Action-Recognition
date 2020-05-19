@@ -33,7 +33,7 @@ def gen_split(root_dir, stackSize, phase):
                             inst_dir = os.path.join(dir1, inst) #GTEA61/processed_frames2/S1/close_choco/1/
                             numFrames = len(glob.glob1(inst_dir, '*.png'))
                             if (original_dir == 'processed_frames2'):
-                                numFrames = len(glob.glob1(inst_dir+'/rgb/', '*.png'))
+                                numFrames = len(glob.glob1(inst_dir+'/rgb', '*.png'))
                             if numFrames >= stackSize:
 
                                 if (original_dir == 'flow_x_processed'):
@@ -41,7 +41,7 @@ def gen_split(root_dir, stackSize, phase):
                                 if (original_dir == 'flow_y_processed'):
                                     DatasetY.append(inst_dir)
                                 if (original_dir == 'processed_frames2'):   
-                                    DatasetF.append(inst_dir+'/rgb/')
+                                    DatasetF.append(inst_dir+'/rgb')
                                     Labels.append(class_id)
                                 NumFrames.append(numFrames)
                     class_id += 1
