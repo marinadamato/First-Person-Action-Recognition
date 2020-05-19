@@ -40,7 +40,7 @@ def gen_split(root_dir, stackSize, phase):
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform=None, seqLen=20,
-                 train=True, mulSeg=False, numSeg=1, fmt='.png',phase):
+                 train=True, mulSeg=False, numSeg=1, fmt='.png',phase='train'):
 
         self.images, self.labels, self.numFrames = gen_split(root_dir, 5,phase)
         self.spatial_transform = spatial_transform
