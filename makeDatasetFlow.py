@@ -19,7 +19,7 @@ def gen_split(root_dir, stackSize, phase):
         root_dir1 = os.path.join(root_dir, original_dir) #GTEA61/flow_x_processed/
         for dir_user in sorted(os.listdir(root_dir1)):
             if dir_user=='.DS_Store': continue
-            if (phase=='train') ^ (dir_user==root_dir1+"S2/"):
+            if (phase=='train') ^ (dir_user=="S2"):
                 class_id = 0
                 dir = os.path.join(root_dir1, dir_user) #GTEA61/processed_frames2/S1/
                 for target in sorted(os.listdir(dir)):
