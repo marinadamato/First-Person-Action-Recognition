@@ -15,7 +15,7 @@ def gen_split(root_dir, stackSize, phase):
     
     for dir_user in sorted(os.listdir(root_dir)): #S1/
         if dir_user=='.DS_Store': continue
-        if (phase=='train') ^ (dir_user==root_dir+"S2/"):
+        if (phase=='train') ^ (dir_user=="S2"):
             dir = os.path.join(root_dir, dir_user) #GTEA61/processed_frames2/S1/
             class_id=0
             
