@@ -101,11 +101,11 @@ class makeDataset(Dataset):
             inpSeq = []
             for k in range(self.stackSize):
                 i = k + int(startFrame)
-                fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.jpg'
+                fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
                 img = Image.open(fl_name)
                 inpSeq.append(self.spatial_transform(img.convert('L'), inv=True, flow=True))
                 # fl_names.append(fl_name)
-                fl_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.jpg'
+                fl_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
                 img = Image.open(fl_name)
                 inpSeq.append(self.spatial_transform(img.convert('L'), inv=False, flow=True))
             inpSeqSegs = torch.stack(inpSeq, 0).squeeze(1)
