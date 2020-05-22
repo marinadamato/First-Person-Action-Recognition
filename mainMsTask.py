@@ -3,7 +3,7 @@ import torch.nn as nn
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
                                 RandomHorizontalFlip)
 
-class msTask(nn.Module):
+class msNet(nn.Module):
     def __init__(self):
         self.conv = nn.Sequential(
             nn.Conv2d(512, 100, 7, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'),
