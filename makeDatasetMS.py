@@ -8,8 +8,9 @@ import random
 
 
 def gen_split(root_dir, stackSize, phase):
-    Dataset = []
+    RGB = []
     Labels = []
+    Maps = []
     NumFrames = []
     root_dir = os.path.join(root_dir, 'processed_frames2') #GTEA61/processed_frames2/
     
@@ -32,18 +33,25 @@ def gen_split(root_dir, stackSize, phase):
                         numFrames = len(glob.glob1(inst_dir, '*.png'))
                         
                         if numFrames >= stackSize:
-                            Dataset.append(inst_dir)
+                            RGB.append(inst_dir)
                             Labels.append(class_id)
                             NumFrames.append(numFrames)
+                            
+                        inst_dir = os.path.join(dir1, inst+"/mmaps") #GTEA61/processed_frames2/S1/close_choco/1/mmaps/
+                        numFrames = len(glob.glob1(inst_dir, '*.png'))
+                        
+                        if numFrames >= stackSize:
+                            Maps.append(inst_dir)
                 class_id += 1
-    return Dataset, Labels, NumFrames
+    return RGB, Labels, NumFrames
 
 class makeDataset(Dataset):
-    def __init__(self, root_dir, spatial_transform=None, seqLen=20,
+    def __init__(self, root_dir, spatial_transform_rgb=None, spatial_transform_map=None, seqLen=20,
                  train=True, mulSeg=False, numSeg=1, fmt='.png',phase='train'):
 
         self.images, self.labels, self.numFrames = gen_split(root_dir, 5,phase)
-        self.spatial_transform = spatial_transform
+        self.spatial_transform_rgb = spatial_transform_rgb
+        self.spatial_transform_map = spatial_transform_map
         self.train = train
         self.mulSeg = mulSeg
         self.numSeg = numSeg
@@ -58,10 +66,15 @@ class makeDataset(Dataset):
         label = self.labels[idx]
         numFrame = self.numFrames[idx]
         inpSeq = []
+        mapSeq = []
         self.spatial_transform.randomize_parameters()
         for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
             fl_name = vid_name + '/' + 'rgb' + str(int(np.floor(i))).zfill(4) + self.fmt
+            maps_name = vid_name + '/' + 'map' + str(int(np.floor(i))).zfill(4) + self.fmt
             img = Image.open(fl_name)
-            inpSeq.append(self.spatial_transform(img.convert('RGB')))
+            mappa = Image.open(f1_name)
+            inpSeq.append(self.spatial_transform_rgb(img.convert('RGB')))
+            mapSeq.append(self.spatial_transform_map(mappa.convert('L')) #Grayscale
         inpSeq = torch.stack(inpSeq, 0)
-        return inpSeq, label
+        mapSeq = torch.stack(mapSeq, 0)
+        return inpSeq, mapSeq, label
