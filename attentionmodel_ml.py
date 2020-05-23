@@ -5,11 +5,29 @@ from torch.nn import functional as F
 from torch.autograd import Variable
 from MyConvLSTMCell import *
 
+class msNet(nn.Module):
+    def __init__(self):
+        self.conv = nn.Sequential(
+            nn.Conv2d(512, 100, 7, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2))
+        self.class=nn.Sequential(
+            nn.Linear(7*7*100,49),
+            nn.Softmax(1))
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = torch.flatten(x, 1)
+        x = self.class(x)
+        return x
+
+
 
 class attentionModel_ml(nn.Module):
     def __init__(self, num_classes=61, mem_size=512):
         super(attentionModel, self).__init__()
         self.num_classes = num_classes
+        self.msNet= msNet()
         self.resNet = resnetMod.resnet34(True, True)
         self.mem_size = mem_size
         self.weight_softmax = self.resNet.fc.weight
@@ -32,7 +50,9 @@ class attentionModel_ml(nn.Module):
             attentionMAP = F.softmax(cam.squeeze(1), dim=1)
             attentionMAP = attentionMAP.view(attentionMAP.size(0), 1, 7, 7)
             attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
+            output_msnet=self.msNet.forward(attentionFeat)
             state = self.lstm_cell(attentionFeat, state)
+        
         feats1 = self.avgpool(state[1]).view(state[1].size(0), -1)
         feats = self.classifier(feats1)
-        return feats, feats1
+        return feats, output_msnet
