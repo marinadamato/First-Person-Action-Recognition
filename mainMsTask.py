@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
                                 RandomHorizontalFlip)
+import attentionmodel_ml
 
 class msNet(nn.Module):
     def __init__(self):
@@ -77,13 +78,13 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     train_params = []
     if stage == 1:
 
-        model = attentionModel(num_classes=num_classes, mem_size=memSize)
+        model = attentionmodel_ml(num_classes=num_classes, mem_size=memSize)
         model.train(False)
         for params in model.parameters():
             params.requires_grad = False
     else:
 
-        model = attentionModel(num_classes=num_classes, mem_size=memSize)
+        model = attentionmodel_ml(num_classes=num_classes, mem_size=memSize)
         model.load_state_dict(torch.load(stage1_dict))
         model.train(False)
         for params in model.parameters():
@@ -173,14 +174,23 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             inputVariable = Variable(inputs.permute(1, 0, 2, 3, 4).cuda())
             labelVariable = Variable(targets.cuda())
             trainSamples += inputs.size(0)
-            output_label, _ = model(inputVariable)
+            output_label, output_ms = model(inputVariable)
+                
             loss = loss_fn(output_label, labelVariable)
             loss.backward()
+                if stage==2:
+                  loss_ms=loss_fn(output_ms, binary_map)
+                  loss_ms.backward()
+                  epoch_loss_ms+=loss_ms.data[0]
+        
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
             numCorrTrain += (predicted == targets.cuda()).sum()
             epoch_loss += loss.data[0]
         avg_loss = epoch_loss/iterPerEpoch
+        if stage ==2:
+            avg_loss_ms= epoch_loss_ms/iterPerEpoch
+            avg_loss = avg_loss + avg_loss_ms
         trainAccuracy = (numCorrTrain / trainSamples) * 100
 
         print('Train: Epoch = {} | Loss = {} | Accuracy = {}'.format(epoch+1, avg_loss, trainAccuracy))
@@ -200,13 +210,21 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     val_samples += inputs.size(0)
                     inputVariable = Variable(inputs.permute(1, 0, 2, 3, 4).cuda(), volatile=True)
                     labelVariable = Variable(targets.cuda(async=True), volatile=True)
-                    output_label, _ = model(inputVariable)
+                    output_label, output_ms = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.data[0]
+                    if stage==2:
+                        loss_ms=loss_fn(output_ms, binary_map)
+                        loss_ms.backward()
+                        epoch_loss_ms+=loss_ms.data[0]
+                                
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += (predicted == targets.cuda()).sum()
                 val_accuracy = (numCorr / val_samples) * 100
                 avg_val_loss = val_loss_epoch / val_iter
+                if stage ==2:
+                    avg_loss_ms= epoch_loss_ms/iterPerEpoch
+                    avg_loss = avg_loss + avg_loss_ms        
                 print('Val: Epoch = {} | Loss {} | Accuracy = {}'.format(epoch + 1, avg_val_loss, val_accuracy))
                 writer.add_scalar('val/epoch_loss', avg_val_loss, epoch + 1)
                 writer.add_scalar('val/accuracy', val_accuracy, epoch + 1)
