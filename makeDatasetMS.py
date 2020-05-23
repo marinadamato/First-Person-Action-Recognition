@@ -43,7 +43,7 @@ def gen_split(root_dir, stackSize, phase):
                         if numFrames >= stackSize:
                             Maps.append(inst_dir)
                 class_id += 1
-    return RGB, Labels, NumFrames
+    return RGB, Maps, Labels, NumFrames 
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform_rgb=None, spatial_transform_map=None, seqLen=20,
