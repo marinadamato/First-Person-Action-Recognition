@@ -48,13 +48,13 @@ def gen_split(root_dir, stackSize, phase):
     return RGB, Maps, Labels, NumFrames 
 
 class makeDataset(Dataset):
-    def __init__(self, root_dir, spatial_transform, seqLen=20,
+    def __init__(self, root_dir, spatial_transform=None, seqLen=20,
                  train=True, mulSeg=False, numSeg=1, fmt='.png',phase='train'):
 
         self.images, self.labels, self.maps, self.numFrames = gen_split(root_dir, 5,phase)
         normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        self.spatial_transform0 = spatial_tramsform_rgb
-        self.spatial_rgb= Compose([spatial_tramsform_rgb, ToTensor(), normalize])
+        self.spatial_transform0 = spatial_tramsform
+        self.spatial_rgb= Compose([spatial_tramsform, ToTensor(), normalize])
                                
         self.spatial_transform_map = Compose([spatial_tramsform_rgb,Scale(7),ToTensor()])
         
