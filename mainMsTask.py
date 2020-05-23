@@ -3,7 +3,7 @@ import torch.nn as nn
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
                                 RandomHorizontalFlip)
 import attentionmodel_ml
-import makeDatasetMS
+from makeDatasetMS import makeDataset
 
 class msNet(nn.Module):
     def __init__(self):
