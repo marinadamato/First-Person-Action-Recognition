@@ -53,10 +53,10 @@ class makeDataset(Dataset):
 
         self.images, self.labels, self.maps, self.numFrames = gen_split(root_dir, 5,phase)
         normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-        self.spatial_transform0 = spatial_tramsform
-        self.spatial_rgb= Compose([spatial_tramsform, ToTensor(), normalize])
+        self.spatial_transform0 = spatial_transform
+        self.spatial_rgb= Compose([spatial_transform, ToTensor(), normalize])
                                
-        self.spatial_transform_map = Compose([spatial_tramsform_rgb,Scale(7),ToTensor()])
+        self.spatial_transform_map = Compose([spatial_transform,Scale(7),ToTensor()])
         
         
         
