@@ -25,7 +25,7 @@ class msNet(nn.Module):
 
 class attentionModel_ml(nn.Module):
     def __init__(self, num_classes=61, mem_size=512):
-        super(attentionModel, self).__init__()
+        super(attentionModel_ml, self).__init__()
         self.num_classes = num_classes
         self.msNet= msNet()
         self.resNet = resnetMod.resnet34(True, True)
