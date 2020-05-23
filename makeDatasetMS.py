@@ -79,7 +79,7 @@ class makeDataset(Dataset):
             maps_name = vid_name + '/' + 'map' + str(int(np.floor(i))).zfill(4) + self.fmt
             img = Image.open(fl_name)
             mappa = Image.open(f1_name)
-            inpSeq.append(self.spatial_transform_rgb(img.convert('RGB')))
+            inpSeq.append(self.spatial_rgb(img.convert('RGB')))
             mapSeq.append(self.spatial_transform_map(mappa.convert('L')) #Grayscale
         inpSeq = torch.stack(inpSeq, 0)
         mapSeq = torch.stack(mapSeq, 0)
