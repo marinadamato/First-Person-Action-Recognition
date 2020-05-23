@@ -50,8 +50,14 @@ class makeDataset(Dataset):
                  train=True, mulSeg=False, numSeg=1, fmt='.png',phase='train'):
 
         self.images, self.labels, self.numFrames = gen_split(root_dir, 5,phase)
-        self.spatial_transform_rgb = spatial_transform_rgb
-        self.spatial_transform_map = spatial_transform_map
+        normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        self.spatial_transform0 = spatial_tramsform_rgb
+        self.spatial_rgb= Compose([spatial_tramsform_rgb, ToTensor(), normalize])
+                               
+        self.spatial_transform_map = Compose([spatial_tramsform_rgb,Scale(7),ToTensor()])
+        
+        
+        
         self.train = train
         self.mulSeg = mulSeg
         self.numSeg = numSeg
