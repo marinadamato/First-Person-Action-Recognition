@@ -3,6 +3,7 @@ import torch.nn as nn
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
                                 RandomHorizontalFlip)
 import attentionmodel_ml
+import makeDatasetMS
 
 class msNet(nn.Module):
     def __init__(self):
@@ -167,7 +168,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             model.resNet.layer4[2].conv1.train(True)
             model.resNet.layer4[2].conv2.train(True)
             model.resNet.fc.train(True)
-        for i, (inputs, targets) in enumerate(train_loader):
+        for i, (inputs ,binary_map, targets) in enumerate(train_loader):
             train_iter += 1
             iterPerEpoch += 1
             optimizer_fn.zero_grad()
@@ -205,7 +206,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 val_iter = 0
                 val_samples = 0
                 numCorr = 0
-                for j, (inputs, targets) in enumerate(val_loader):
+                for j, (inputs, binary_map, targets) in enumerate(val_loader):
                     val_iter += 1
                     val_samples += inputs.size(0)
                     inputVariable = Variable(inputs.permute(1, 0, 2, 3, 4).cuda(), volatile=True)
