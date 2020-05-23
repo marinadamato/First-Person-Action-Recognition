@@ -6,6 +6,7 @@ import attentionmodel_ml
 from makeDatasetMS import makeDataset
 import argparse
 import sys
+import os
 from tensorboardX import SummaryWriter
 
 def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir, seqLen, trainBatchSize,
