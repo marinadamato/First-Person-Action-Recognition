@@ -5,6 +5,8 @@ from PIL import Image
 import numpy as np
 import glob
 import random
+from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
+                                RandomHorizontalFlip)
 
 
 def gen_split(root_dir, stackSize, phase):
