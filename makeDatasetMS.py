@@ -49,7 +49,7 @@ class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform, seqLen=20,
                  train=True, mulSeg=False, numSeg=1, fmt='.png',phase='train'):
 
-        self.images, self.labels, self.numFrames = gen_split(root_dir, 5,phase)
+        self.images, self.labels, self.maps, self.numFrames = gen_split(root_dir, 5,phase)
         normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.spatial_transform0 = spatial_tramsform_rgb
         self.spatial_rgb= Compose([spatial_tramsform_rgb, ToTensor(), normalize])
@@ -70,6 +70,7 @@ class makeDataset(Dataset):
     def __getitem__(self, idx):
         vid_name = self.images[idx]
         label = self.labels[idx]
+        map_name = self.maps[idx]
         numFrame = self.numFrames[idx]
         inpSeq = []
         mapSeq = []
