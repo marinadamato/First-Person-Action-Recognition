@@ -5,26 +5,6 @@ from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize,
 import attentionmodel_ml
 from makeDatasetMS import makeDataset
 
-class msNet(nn.Module):
-    def __init__(self):
-        self.conv = nn.Sequential(
-            nn.Conv2d(512, 100, 7, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros'),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2))
-        self.class=nn.Sequential(
-            nn.Linear(7*7*100,49),
-            nn.Softmax(1))
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = torch.flatten(x, 1)
-        x = self.class(x)
-        return x
-
-
-
-
-
 def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir, seqLen, trainBatchSize,
              valBatchSize, numEpochs, lr1, decay_factor, decay_step, memSize):
 
