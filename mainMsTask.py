@@ -50,7 +50,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     if val_data_dir is not None:
 
         vid_seq_val = makeDataset(val_data_dir,
-                                   spatial_transform=Compose([Scale(256), CenterCrop(224), ToTensor(), normalize]),
+                                   spatial_transform=Compose([Scale(256), CenterCrop(224)]),
                                    seqLen=seqLen, fmt='.png',phase='test')
 
         val_loader = torch.utils.data.DataLoader(vid_seq_val, batch_size=valBatchSize,
