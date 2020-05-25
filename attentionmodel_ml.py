@@ -10,7 +10,7 @@ class msNet(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(512, 100, 7, stride=1, padding=0, dilation=1, groups=1, bias=True),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2)
+            nn.MaxPool2d(kernel_size=3, stride=2))
         self.clas=nn.Sequential(
             nn.Linear(7*7*100,49),
             nn.Softmax(1))
