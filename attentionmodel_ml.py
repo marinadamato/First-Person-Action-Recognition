@@ -18,7 +18,7 @@ class msNet(nn.Module):
 
     def forward(self, x):
         x = self.conv(x)
-        x = torch.flatten(x, 1)
+        x = x.view(x.size(0), -1)
         x = self.clas(x)
         return x
 
