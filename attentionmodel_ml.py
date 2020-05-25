@@ -7,6 +7,7 @@ from MyConvLSTMCell import *
 
 class msNet(nn.Module):
     def __init__(self):
+        super(msNet, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(512, 100, 7, stride=1, padding=0, dilation=1, groups=1, bias=True),
             nn.ReLU(inplace=True),
