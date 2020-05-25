@@ -40,7 +40,6 @@ def gen_split(root_dir, stackSize, phase):
                             NumFrames.append(numFrames)
                             
                         inst_dir = os.path.join(dir1, inst+"/mmaps") #GTEA61/processed_frames2/S1/close_choco/1/mmaps/
-                        numFrames = len(glob.glob1(inst_dir, '*.png'))
                         
                         if numFrames >= stackSize:
                             Maps.append(inst_dir)
