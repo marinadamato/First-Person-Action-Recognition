@@ -72,15 +72,29 @@ class makeDataset(Dataset):
         vid_name = self.images[idx]
         label = self.labels[idx]
         map_name = self.maps[idx]
+
         numFrame = self.numFrames[idx]
         inpSeq = []
         mapSeq = []
         self.spatial_transform0.randomize_parameters()
         for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
             fl_name = vid_name + '/' + 'rgb' + str(int(np.floor(i))).zfill(4) + self.fmt
-            maps_name = vid_name + '/' + 'map' + str(int(np.floor(i))).zfill(4) + self.fmt
             img = Image.open(fl_name)
-            mappa = Image.open(fl_name)
+            flag=1
+            j=i
+            while(flag):
+                
+                maps_name = vid_name + '/' + 'map' + str(int(np.floor(j))).zfill(4) + self.fmt
+                try:
+                    mappa = Image.open(fl_name)
+                    flag=0
+                except:
+                    if j<=i:
+                        j= 2*i-j+1 #j=i --> j=i +1 ; j=i-1 j-i=-1 --> j=i-(-1)+1
+                    else:
+                        j= 2*i-j #j=i+1 j-i=1 --> j=i-1
+                    continue
+
             inpSeq.append(self.spatial_rgb(img.convert('RGB')))
             mapSeq.append(self.spatial_transform_map(mappa.convert('L'))) #Grayscale
         inpSeq = torch.stack(inpSeq, 0)
