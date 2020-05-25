@@ -420,3 +420,13 @@ class FlippedImagesTest(object):
 
     def randomize_parameters(self):
         pass
+    class Binary(object):
+
+    def __init__(self,threshold):
+        self.threshold=threshold
+    
+    def __call__(self, img_tensor):
+        img_tensor.map_(img_tensor,lambda x,_ : 1 if x>self.threshold else 0)
+        
+    def randomize_parameters(self):
+        pass
