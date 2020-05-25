@@ -9,9 +9,9 @@ class msNet(nn.Module):
     def __init__(self):
         super(msNet, self).__init__()
         self.conv = nn.Sequential(nn.ReLU(inplace=True),
-            nn.Conv2d(512, 100, 3, stride=1, padding=0, dilation=1, groups=1, bias=True))
+            nn.Conv2d(512, 100, 3, stride=1, padding=1, dilation=1, groups=1, bias=True))
         self.clas=nn.Sequential(
-            nn.Linear(3*3*100,49),
+            nn.Linear(7*7*100,49),
             nn.Softmax(1))
 
     def forward(self, x):
