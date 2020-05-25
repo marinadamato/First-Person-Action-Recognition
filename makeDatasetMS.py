@@ -54,9 +54,9 @@ class makeDataset(Dataset):
         self.images, self.labels, self.maps, self.numFrames = gen_split(root_dir, 5,phase)
         normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.spatial_transform0 = spatial_transform
-        self.spatial_rgb= Compose([spatial_transform, ToTensor(), normalize])
+        self.spatial_rgb= Compose([spatial_transform0, ToTensor(), normalize])
                                
-        self.spatial_transform_map = Compose([spatial_transform,Scale(7),ToTensor()])
+        self.spatial_transform_map = Compose([spatial_transform0, Scale(7), ToTensor()])
         
         
         
@@ -76,7 +76,7 @@ class makeDataset(Dataset):
         numFrame = self.numFrames[idx]
         inpSeq = []
         mapSeq = []
-        self.spatial_transform.randomize_parameters()
+        self.spatial_transform0.randomize_parameters()
         for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
             fl_name = vid_name + '/' + 'rgb' + str(int(np.floor(i))).zfill(4) + self.fmt
             maps_name = vid_name + '/' + 'map' + str(int(np.floor(i))).zfill(4) + self.fmt
