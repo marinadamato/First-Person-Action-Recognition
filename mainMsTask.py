@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
                                 RandomHorizontalFlip)
-from attentionmodel_ml import attentionModel_ml
+from attentionmodel_ml import *
 from makeDatasetMS import makeDataset
 import argparse
 import sys
