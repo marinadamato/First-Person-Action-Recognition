@@ -63,13 +63,13 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     train_params = []
     if stage == 1:
 
-        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize)
+        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize, regressor=regressor)
         model.train(False)
         for params in model.parameters():
             params.requires_grad = False
     else:
 
-        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize)
+        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize, regressor)
         model.load_state_dict(torch.load(stage1_dict))
         model.train(False)
         for params in model.parameters():
