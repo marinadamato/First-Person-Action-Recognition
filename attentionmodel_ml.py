@@ -23,7 +23,7 @@ from MyConvLSTMCell import *
 
 
 class attentionModel_ml(nn.Module):
-    def __init__(self, num_classes=61, mem_size=512):
+    def __init__(self, num_classes=61, mem_size=512, regressor=False):
         super(attentionModel_ml, self).__init__()
         self.num_classes = num_classes
         self.resNet = resnetMod.resnet34(True, True)
@@ -38,9 +38,13 @@ class attentionModel_ml(nn.Module):
         #msNet
         self.conv = nn.Sequential(nn.ReLU(inplace=True),
             nn.Conv2d(512, 100, 3, stride=1, padding=1, dilation=1, groups=1, bias=True))
-        self.clas=nn.Sequential(
-            nn.Linear(7*7*100,49),
-            nn.Softmax(1))
+        if !regressor:
+            self.clas=nn.Sequential(
+                nn.Linear(7*7*100,49),
+                nn.Softmax(1))
+        else:
+            self.clas=nn.Sequential(
+                nn.Linear(7*7*100,49))
 
     def forward(self, inputVariable):
         state = (Variable(torch.zeros((inputVariable.size(1), self.mem_size, 7, 7)).cuda()),
