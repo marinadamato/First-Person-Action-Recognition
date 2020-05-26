@@ -43,7 +43,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     spatial_transform = Compose([Scale(256), RandomHorizontalFlip(), MultiScaleCornerCrop([1, 0.875, 0.75, 0.65625], 224)])
 
     vid_seq_train = makeDataset(train_data_dir,
-                                spatial_transform=spatial_transform, seqLen=seqLen, fmt='.png',phase='train')
+                                spatial_transform=spatial_transform, seqLen=seqLen, fmt='.png',phase='train', regressor=regressor)
 
     train_loader = torch.utils.data.DataLoader(vid_seq_train, batch_size=trainBatchSize,
                             shuffle=True, num_workers=4, pin_memory=True)
@@ -51,7 +51,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
 
         vid_seq_val = makeDataset(val_data_dir,
                                    spatial_transform=Compose([Scale(256), CenterCrop(224)]),
-                                   seqLen=seqLen, fmt='.png',phase='test')
+                                   seqLen=seqLen, fmt='.png',phase='test', regressor=regressor)
 
         val_loader = torch.utils.data.DataLoader(vid_seq_val, batch_size=valBatchSize,
                                 shuffle=False, num_workers=2, pin_memory=True)
