@@ -55,8 +55,8 @@ class makeDataset(Dataset):
         self.spatial_transform0 = spatial_transform
         self.spatial_rgb= Compose([self.spatial_transform0, ToTensor(), normalize])
         
-        if !regressor:
-            self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor(), Binary()])
+        if not(regressor):
+            self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor(), Binary(0.4)])
         else:
             self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor()])
                
