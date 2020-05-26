@@ -38,7 +38,7 @@ class attentionModel_ml(nn.Module):
         #msNet
         self.conv = nn.Sequential(nn.ReLU(inplace=True),
             nn.Conv2d(512, 100, 3, stride=1, padding=1, dilation=1, groups=1, bias=True))
-        if !regressor:
+        if not(regressor):
             self.clas=nn.Sequential(
                 nn.Linear(7*7*100,49),
                 nn.Softmax(1))
