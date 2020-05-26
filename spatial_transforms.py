@@ -423,7 +423,7 @@ class FlippedImagesTest(object):
     
 class Binary(object):
 
-    def __init__(self,threshold):
+    def __init__(self,threshold, inv, flow):
         self.threshold=threshold
     
     def __call__(self, img_tensor):
