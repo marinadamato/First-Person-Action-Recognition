@@ -6,7 +6,7 @@ import numpy as np
 import glob
 import random
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
-                                RandomHorizontalFlip)
+                                RandomHorizontalFlip, Binary)
 
 
 def gen_split(root_dir, stackSize, phase):
@@ -55,7 +55,7 @@ class makeDataset(Dataset):
         self.spatial_transform0 = spatial_transform
         self.spatial_rgb= Compose([self.spatial_transform0, ToTensor(), normalize])
                                
-        self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor()])
+        self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor(), Binary()])
         
         
         
