@@ -10,7 +10,7 @@ import os
 from tensorboardX import SummaryWriter
 
 def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir, seqLen, trainBatchSize,
-             valBatchSize, numEpochs, lr1, decay_factor, decay_step, memSize):
+             valBatchSize, numEpochs, lr1, decay_factor, decay_step, memSize, regressor):
 
     if dataset == 'gtea61':
         num_classes = 61
@@ -126,7 +126,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     model.cuda()
 
     loss_fn = nn.CrossEntropyLoss()
-
+    loss_reg = nn.MSELoss()
     optimizer_fn = torch.optim.Adam(train_params, lr=lr1, weight_decay=4e-5, eps=1e-4)
 
     optim_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer_fn, milestones=decay_step,
@@ -164,9 +164,14 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             loss = loss_fn(output_label, labelVariable)
             loss.backward()
             if stage==2:
-                loss_ms=loss_fn(output_ms, binary_map)
-                loss_ms.backward()
-                epoch_loss_ms+=loss_ms.data[0]
+                if regressor:
+                    loss_ms=loss_reg(output_ms, binary_map)
+                    loss_ms.backward()
+                    epoch_loss_ms+=loss_ms.data[0]
+                else:
+                    loss_ms=loss_fn(output_ms, binary_map)
+                    loss_ms.backward()
+                    epoch_loss_ms+=loss_ms.data[0]
         
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
@@ -199,9 +204,14 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.data[0]
                     if stage==2:
-                        loss_ms=loss_fn(output_ms, binary_map)
-                        loss_ms.backward()
-                        epoch_loss_ms+=loss_ms.data[0]
+                        if regressor:
+                            loss_ms=loss_reg(output_ms, binary_map)
+                            loss_ms.backward()
+                            epoch_loss_ms+=loss_ms.data[0]
+                        else:
+                            loss_ms=loss_fn(output_ms, binary_map)
+                            loss_ms.backward()
+                            epoch_loss_ms+=loss_ms.data[0]
                                 
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += (predicted == targets.cuda()).sum()
@@ -251,6 +261,7 @@ def __main__():
     parser.add_argument('--stepSize', type=float, default=[25, 75, 150], nargs="+", help='Learning rate decay step')
     parser.add_argument('--decayRate', type=float, default=0.1, help='Learning rate decay rate')
     parser.add_argument('--memSize', type=int, default=512, help='ConvLSTM hidden state size')
+    parser.add_argument('--regressor', type=str, default=False, help='Regression version of MS task')
 
     args = parser.parse_args()
 
@@ -268,9 +279,10 @@ def __main__():
     stepSize = args.stepSize
     decayRate = args.decayRate
     memSize = args.memSize
+    regressor = args.regressor
 
     main_run(dataset, stage, trainDatasetDir, valDatasetDir, stage1Dict, outDir, seqLen, trainBatchSize,
-             valBatchSize, numEpochs, lr1, decayRate, stepSize, memSize)
+             valBatchSize, numEpochs, lr1, decayRate, stepSize, memSize, regressor)
 
 __main__()
     
