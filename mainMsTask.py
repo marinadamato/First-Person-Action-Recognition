@@ -204,13 +204,14 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     output_label, output_ms = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.data[0]
+                    binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
                     if stage==2:
                         if regressor:
-                            loss_ms=loss_reg(output_ms, binary_map)
+                            loss_ms=loss_reg(output_ms.view(seqLen, trainBatchSize, 1, 7, 7), binary_map)
                             loss_ms.backward()
                             epoch_loss_ms+=loss_ms.data[0]
                         else:
-                            loss_ms=loss_fn(output_ms, binary_map)
+                            loss_ms=loss_fn(output_ms.view(seqLen, trainBatchSize, 1, 7, 7), binary_map)
                             loss_ms.backward()
                             epoch_loss_ms+=loss_ms.data[0]
                                 
