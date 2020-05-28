@@ -37,6 +37,8 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     train_log_acc = open((model_folder + '/train_log_acc.txt'), 'w')
     val_log_loss = open((model_folder + '/val_log_loss.txt'), 'w')
     val_log_acc = open((model_folder + '/val_log_acc.txt'), 'w')
+    train_log_loss_ms= open((model_folder + '/train_log_loss_ms.txt'), 'w')
+    val_log_loss_ms = open((model_folder + '/val_log_loss_ms.txt'), 'w')
 
     # Data loader
     normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -181,13 +183,15 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         avg_loss = epoch_loss/iterPerEpoch
         if stage ==2:
             avg_loss_ms= epoch_loss_ms/iterPerEpoch
-            avg_loss = avg_loss + avg_loss_ms
+            #avg_loss = avg_loss + avg_loss_ms
+            train_log_loss_ms.write('Train Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_loss_ms))
         trainAccuracy = (numCorrTrain / trainSamples) * 100
 
         print('Train: Epoch = {} | Loss = {} | Accuracy = {}'.format(epoch+1, avg_loss, trainAccuracy))
         writer.add_scalar('train/epoch_loss', avg_loss, epoch+1)
         writer.add_scalar('train/accuracy', trainAccuracy, epoch+1)
         train_log_loss.write('Train Loss after {} epochs = {}\n'.format(epoch + 1, avg_loss))
+        
         train_log_acc.write('Train Accuracy after {} epochs = {}%\n'.format(epoch + 1, trainAccuracy))
         if val_data_dir is not None:
             if (epoch+1) % 1 == 0:
@@ -208,11 +212,11 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     if stage==2:
                         if regressor:
                             loss_ms=loss_reg(output_ms.view(seqLen, valBatchSize, 1, 7, 7), binary_map)
-                            loss_ms.backward()
+                            
                             epoch_loss_ms+=loss_ms.data[0]
                         else:
                             loss_ms=loss_fn(output_ms.view(seqLen, valBatchSize, 1, 7, 7), binary_map)
-                            loss_ms.backward()
+                           
                             epoch_loss_ms+=loss_ms.data[0]
                                 
                     _, predicted = torch.max(output_label.data, 1)
@@ -221,10 +225,12 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 avg_val_loss = val_loss_epoch / val_iter
                 if stage ==2:
                     avg_loss_ms= epoch_loss_ms/iterPerEpoch
-                    avg_loss = avg_loss + avg_loss_ms        
+                    #avg_loss = avg_loss + avg_loss_ms 
+                    val_log_loss_ms.write('Val Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_val_loss_ms))
                 print('Val: Epoch = {} | Loss {} | Accuracy = {}'.format(epoch + 1, avg_val_loss, val_accuracy))
                 writer.add_scalar('val/epoch_loss', avg_val_loss, epoch + 1)
                 writer.add_scalar('val/accuracy', val_accuracy, epoch + 1)
+                
                 val_log_loss.write('Val Loss after {} epochs = {}\n'.format(epoch + 1, avg_val_loss))
                 val_log_acc.write('Val Accuracy after {} epochs = {}%\n'.format(epoch + 1, val_accuracy))
                 if val_accuracy > min_accuracy:
@@ -240,6 +246,8 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     train_log_acc.close()
     val_log_acc.close()
     val_log_loss.close()
+    train_log_loss_ms.close()
+    val_log_loss_ms.close()
     writer.export_scalars_to_json(model_folder + "/all_scalars.json")
     writer.close()
 
