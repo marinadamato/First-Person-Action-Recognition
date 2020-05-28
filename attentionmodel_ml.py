@@ -45,10 +45,12 @@ class attentionModel_ml(nn.Module):
         else:
             self.clas=nn.Sequential(
                 nn.Linear(7*7*100,49))
-
+            
+            
     def forward(self, inputVariable):
         state = (Variable(torch.zeros((inputVariable.size(1), self.mem_size, 7, 7)).cuda()),
                  Variable(torch.zeros((inputVariable.size(1), self.mem_size, 7, 7)).cuda()))
+        output_msnet = []
         for t in range(inputVariable.size(0)):
             logit, feature_conv, feature_convNBN = self.resNet(inputVariable[t])
             bz, nc, h, w = feature_conv.size()
@@ -59,13 +61,14 @@ class attentionModel_ml(nn.Module):
             attentionMAP = F.softmax(cam.squeeze(1), dim=1)
             attentionMAP = attentionMAP.view(attentionMAP.size(0), 1, 7, 7)
             attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
-            
-            output_msnet = self.conv(attentionFeat)
-            output_msnet = output_msnet.view(output_msnet.size(0), -1)
-            output_msnet = self.clas(output_msnet)
 
+            x = self.conv(attentionFeat)
+            x = x.view(x.size(0), -1)
+
+            output_msnet.append( self.clas(x))
             state = self.lstm_cell(attentionFeat, state)
-        
+
+        output_msnet = torch.stack(output_msnet, 0)
         feats1 = self.avgpool(state[1]).view(state[1].size(0), -1)
         feats = self.classifier(feats1)
         return feats, output_msnet
