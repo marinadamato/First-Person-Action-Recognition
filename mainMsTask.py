@@ -163,6 +163,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 
             loss = loss_fn(output_label, labelVariable)
             loss.backward()
+            binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
             if stage==2:
                 if regressor:
                     loss_ms=loss_reg(output_ms, binary_map)
