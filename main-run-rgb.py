@@ -9,7 +9,7 @@ import sys
 
 
 def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir, seqLen, trainBatchSize,
-             valBatchSize, numEpochs, lr1, decay_factor, decay_step, memSize):
+             valBatchSize, numEpochs, lr1, decay_factor, decay_step, memSize, attention):
 
     if dataset == 'gtea61':
         num_classes = 61
@@ -64,13 +64,13 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     train_params = []
     if stage == 1:
 
-        model = attentionModel(num_classes=num_classes, mem_size=memSize)
+        model = attentionModel(num_classes=num_classes, mem_size=memSize, attention=attention)
         model.train(False)
         for params in model.parameters():
             params.requires_grad = False
     else:
 
-        model = attentionModel(num_classes=num_classes, mem_size=memSize)
+        model = attentionModel(num_classes=num_classes, mem_size=memSize, attention=attention)
         model.load_state_dict(torch.load(stage1_dict))
         model.train(False)
         for params in model.parameters():
@@ -252,8 +252,9 @@ def __main__():
     stepSize = args.stepSize
     decayRate = args.decayRate
     memSize = args.memSize
+    attention = args.attention
 
     main_run(dataset, stage, trainDatasetDir, valDatasetDir, stage1Dict, outDir, seqLen, trainBatchSize,
-             valBatchSize, numEpochs, lr1, decayRate, stepSize, memSize)
+             valBatchSize, numEpochs, lr1, decayRate, stepSize, memSize, attention)
 
 __main__()
