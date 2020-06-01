@@ -235,6 +235,7 @@ def __main__():
     parser.add_argument('--stepSize', type=float, default=[25, 75, 150], nargs="+", help='Learning rate decay step')
     parser.add_argument('--decayRate', type=float, default=0.1, help='Learning rate decay rate')
     parser.add_argument('--memSize', type=int, default=512, help='ConvLSTM hidden state size')
+    parser.add_argument('--attention', type=bool, default=512, help='Run attention model')
 
     args = parser.parse_args()
 
