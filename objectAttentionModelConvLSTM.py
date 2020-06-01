@@ -25,7 +25,7 @@ class attentionModel(nn.Module):
                  Variable(torch.zeros((inputVariable.size(1), self.mem_size, 7, 7)).cuda()))
         for t in range(inputVariable.size(0)):
             logit, feature_conv, feature_convNBN = self.resNet(inputVariable[t])
-            if attention: 
+            if self.attention: 
                 bz, nc, h, w = feature_conv.size()
                 feature_conv1 = feature_conv.view(bz, nc, h*w)
                 probs, idxs = logit.sort(1, True)
