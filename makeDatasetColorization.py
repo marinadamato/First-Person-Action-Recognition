@@ -7,7 +7,7 @@ import glob
 import random
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
                                 RandomHorizontalFlip, Binary)
-
+from colorization_block import colorization
 
 def gen_split(root_dir, stackSize, phase):
     RGB = []
@@ -55,10 +55,8 @@ class makeDataset(Dataset):
         self.spatial_transform0 = spatial_transform
         self.spatial_rgb= Compose([self.spatial_transform0, ToTensor(), normalize])
         
-        if not(regressor):
-            self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor(), Binary(0.4)])
-        else:
-            self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor()])
+       
+        self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor()])
                
         
         self.train = train
@@ -98,7 +96,10 @@ class makeDataset(Dataset):
                     continue
 
             inpSeq.append(self.spatial_rgb(img.convert('RGB')))
-            mapSeq.append(self.spatial_transform_map(mappa.convert('L'))) #Grayscale
+            img_bew= self.spatial_transform_map(img.convert('L'))
+            colorized_image=colorization(img_bew)
+            
+            mapSeq.append(colorized_image) #Grayscale
         inpSeq = torch.stack(inpSeq, 0)
         mapSeq = torch.stack(mapSeq, 0)
         return inpSeq, mapSeq, label
