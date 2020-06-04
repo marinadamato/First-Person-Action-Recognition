@@ -21,10 +21,10 @@ class residual_block(nn.Module):
 
 
 class colorization(nn.Module):
-    def __init__(self, block, layers, channels, num_classes):
+    def __init__(self):
         
         super(colorization, self).__init__()
-        self.conv1 = nn.Conv2d(channels, 64, kernel_size=7, stride=2, padding=3,
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         
         self.bn1 = nn.BatchNorm2d(64)
