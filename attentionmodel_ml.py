@@ -4,6 +4,7 @@ import torch.nn as nn
 from torch.nn import functional as F
 from torch.autograd import Variable
 from MyConvLSTMCell import *
+from objectAttentionModelConvLSTM import attentionModel
 
 '''class msNet(nn.Module):
     def __init__(self):
@@ -25,6 +26,7 @@ from MyConvLSTMCell import *
 class attentionModel_ml(nn.Module):
     def __init__(self, num_classes=61, mem_size=512, regressor=False):
         super(attentionModel_ml, self).__init__()
+        
         self.num_classes = num_classes
         self.resNet = resnetMod.resnet34(True, True)
         self.mem_size = mem_size
