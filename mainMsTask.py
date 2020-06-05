@@ -104,10 +104,10 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         for params in model.resNet.fc.parameters():
             params.requires_grad = True
             train_params += [params]
-        for params in model.conv():
+        for params in model.conv.parameters():
             params.requires_grad = True
             train_params += [params]
-        for params in model.clas():
+        for params in model.clas.parameters():
             params.requires_grad = True
             train_params += [params]
         model.conv.train(True)
