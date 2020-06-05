@@ -95,13 +95,17 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     min_accuracy = 0
 
     for epoch in range(numEpochs):
+        model.train(True)
+        model.attML.train(False)
         optim_scheduler.step()
         epoch_loss = 0
         numCorrTrain = 0
         trainSamples = 0
         iterPerEpoch = 0
+        
         writer.add_scalar('lr', optimizer_fn.param_groups[0]['lr'], epoch+1)
         for i, (flow, _ ,binary_map, targets) in enumerate(train_loader):
+            
             train_iter += 1
             iterPerEpoch += 1
             optimizer_fn.zero_grad()
