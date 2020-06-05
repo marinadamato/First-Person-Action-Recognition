@@ -24,7 +24,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         print('Dataset not found')
         sys.exit()
 
-    model_folder = os.path.join('./', out_dir, dataset, 'rgb', 'stage'+str(stage))  # Dir for saving models and log files
+    model_folder = os.path.join('./', out_dir, dataset, 'MS')  # Dir for saving models and log files
     # Create the dir
     if os.path.exists(model_folder):
         print('Directory {} exists!'.format(model_folder))
@@ -234,12 +234,12 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 val_log_loss.write('Val Loss after {} epochs = {}\n'.format(epoch + 1, avg_val_loss))
                 val_log_acc.write('Val Accuracy after {} epochs = {}%\n'.format(epoch + 1, val_accuracy))
                 if val_accuracy > min_accuracy:
-                    save_path_model = (model_folder + '/model_rgb_state_dict.pth')
+                    save_path_model = (model_folder + '/model_ms_state_dict.pth')
                     torch.save(model.state_dict(), save_path_model)
                     min_accuracy = val_accuracy
             else:
                 if (epoch+1) % 10 == 0:
-                    save_path_model = (model_folder + '/model_rgb_state_dict_epoch' + str(epoch+1) + '.pth')
+                    save_path_model = (model_folder + '/model_ms_state_dict_epoch' + str(epoch+1) + '.pth')
                     torch.save(model.state_dict(), save_path_model)
 
     train_log_loss.close()
