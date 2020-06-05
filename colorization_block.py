@@ -1,3 +1,5 @@
+from attentionmodel_ml import attentionModel_ml
+
 class residual_block(nn.Module):
     def __init__(self):
         super(residual_block,self).__init__()
@@ -7,6 +9,7 @@ class residual_block(nn.Module):
         self.conv2 = nn.Conv2d(64,64, kernel_size=3, stride=1,padding= 1)
         self.bn2 = nn.BatchNorm2d(64)
         self.relu2 = nn.LeakyReLU(negative_slope=0.02, inplace=True)
+        
 
     def forward(self,x):
         x_p=x
@@ -21,7 +24,7 @@ class residual_block(nn.Module):
 
 
 class colorization(nn.Module):
-    def __init__(self):
+    def __init__(self,num_classes=61, mem_size=512, regressor=False):
         
         super(colorization, self).__init__()
         self.conv1 = nn.Conv2d(1, 64, kernel_size=7, stride=2, padding=3,
@@ -35,6 +38,7 @@ class colorization(nn.Module):
 
         self.conv2 = nn.Conv2d(64, 3, kernel_size= 1, stride=1, padding=0, bias=False)
         self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=2, group=3, bias=False)
+        self.attML = attentionModel_ml(num_classes, mem_size, regressor)
     
     def forward(self,x):
 
@@ -49,4 +53,5 @@ class colorization(nn.Module):
 
         x=self.conv2(x) 
         x=self.deconv(x)
+        x=self.attML(x)
         return x
