@@ -104,7 +104,14 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         for params in model.resNet.fc.parameters():
             params.requires_grad = True
             train_params += [params]
-
+        for params in model.conv():
+            params.requires_grad = True
+            train_params += [params]
+        for params in model.clas():
+            params.requires_grad = True
+            train_params += [params]
+        model.conv.train(True)
+        model.clas.train(True)
         model.resNet.layer4[0].conv1.train(True)
         model.resNet.layer4[0].conv2.train(True)
         model.resNet.layer4[1].conv1.train(True)
@@ -120,6 +127,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     for params in model.classifier.parameters():
         params.requires_grad = True
         train_params += [params]
+        
 
 
     model.lstm_cell.train(True)
@@ -147,6 +155,8 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         model.classifier.train(True)
         writer.add_scalar('lr', optimizer_fn.param_groups[0]['lr'], epoch+1)
         if stage == 2:
+            model.conv.train(True)
+            model.clas.train(True)
             model.resNet.layer4[0].conv1.train(True)
             model.resNet.layer4[0].conv2.train(True)
             model.resNet.layer4[1].conv1.train(True)
