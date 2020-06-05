@@ -3,6 +3,7 @@ import torch.nn as nn
 from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
                                 RandomHorizontalFlip)
 from attentionmodel_ml import *
+from colorization_block import colorization
 from makeDatasetMS import makeDataset
 import argparse
 import sys
@@ -71,60 +72,16 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             params.requires_grad = False
     else:
 
-        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize, regressor=regressor)
-        model.load_state_dict(torch.load(stage1_dict))
-        model.train(False)
+        model = colorization(num_classes=num_classes, mem_size=memSize, regressor=regressor)
+        model.attML.load_state_dict(torch.load(stage1_dict))
+        model.train(True)
+        model.attML.train(False)
         for params in model.parameters():
+            params.requires_grad = True
+        for params in model.attML.parameters():
             params.requires_grad = False
         #
-        for params in model.resNet.layer4[0].conv1.parameters():
-            params.requires_grad = True
-            train_params += [params]
 
-        for params in model.resNet.layer4[0].conv2.parameters():
-            params.requires_grad = True
-            train_params += [params]
-
-        for params in model.resNet.layer4[1].conv1.parameters():
-            params.requires_grad = True
-            train_params += [params]
-
-        for params in model.resNet.layer4[1].conv2.parameters():
-            params.requires_grad = True
-            train_params += [params]
-
-        for params in model.resNet.layer4[2].conv1.parameters():
-            params.requires_grad = True
-            train_params += [params]
-        #
-        for params in model.resNet.layer4[2].conv2.parameters():
-            params.requires_grad = True
-            train_params += [params]
-        #
-        for params in model.resNet.fc.parameters():
-            params.requires_grad = True
-            train_params += [params]
-
-        model.resNet.layer4[0].conv1.train(True)
-        model.resNet.layer4[0].conv2.train(True)
-        model.resNet.layer4[1].conv1.train(True)
-        model.resNet.layer4[1].conv2.train(True)
-        model.resNet.layer4[2].conv1.train(True)
-        model.resNet.layer4[2].conv2.train(True)
-        model.resNet.fc.train(True)
-
-    for params in model.lstm_cell.parameters():
-        params.requires_grad = True
-        train_params += [params]
-
-    for params in model.classifier.parameters():
-        params.requires_grad = True
-        train_params += [params]
-
-
-    model.lstm_cell.train(True)
-
-    model.classifier.train(True)
     model.cuda()
 
     loss_fn = nn.CrossEntropyLoss()
@@ -143,22 +100,12 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         numCorrTrain = 0
         trainSamples = 0
         iterPerEpoch = 0
-        model.lstm_cell.train(True)
-        model.classifier.train(True)
         writer.add_scalar('lr', optimizer_fn.param_groups[0]['lr'], epoch+1)
-        if stage == 2:
-            model.resNet.layer4[0].conv1.train(True)
-            model.resNet.layer4[0].conv2.train(True)
-            model.resNet.layer4[1].conv1.train(True)
-            model.resNet.layer4[1].conv2.train(True)
-            model.resNet.layer4[2].conv1.train(True)
-            model.resNet.layer4[2].conv2.train(True)
-            model.resNet.fc.train(True)
-        for i, (inputs ,binary_map, targets) in enumerate(train_loader):
+        for i, (flow, _ ,binary_map, targets) in enumerate(train_loader):
             train_iter += 1
             iterPerEpoch += 1
             optimizer_fn.zero_grad()
-            inputVariable = Variable(inputs.permute(1, 0, 2, 3, 4).cuda())
+            inputVariable = Variable(flow.permute(1, 0, 2, 3, 4).cuda())
             labelVariable = Variable(targets.cuda())
             trainSamples += inputs.size(0)
             output_label, output_ms = model(inputVariable)
@@ -200,10 +147,11 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 val_iter = 0
                 val_samples = 0
                 numCorr = 0
-                for j, (inputs, binary_map, targets) in enumerate(val_loader):
+                for j, (flow, _, binary_map, targets) in enumerate(val_loader):
                     val_iter += 1
                     val_samples += inputs.size(0)
-                    inputVariable = Variable(inputs.permute(1, 0, 2, 3, 4).cuda(), volatile=True)
+                    
+                    inputVariable = Variable(flow.permute(1, 0, 2, 3, 4).cuda(), volatile=True)
                     labelVariable = Variable(targets.cuda(async=True), volatile=True)
                     output_label, output_ms = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
@@ -216,7 +164,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                             epoch_loss_ms+=loss_ms.data[0]
                         else:
                             loss_ms=loss_fn(output_ms.view(seqLen, valBatchSize, 1, 7, 7), binary_map)
-                           
+                            
                             epoch_loss_ms+=loss_ms.data[0]
                                 
                     _, predicted = torch.max(output_label.data, 1)
