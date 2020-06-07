@@ -6,6 +6,9 @@ import numpy as np
 import random
 import glob
 import sys
+from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize, MultiScaleCornerCrop,
+                                RandomHorizontalFlip, Binary)
+
 
 
 def gen_split(root_dir, stackSize, phase):
@@ -63,7 +66,14 @@ class makeDataset(Dataset):
 
         self.imagesX, self.imagesY, self.imagesF, self.labels, self.numFrames = gen_split(
             root_dir, stackSize, phase)
-        self.spatial_transform = spatial_transform
+        normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        self.spatial_transform0 = spatial_transform
+        self.spatial_rgb= Compose([self.spatial_transform0, ToTensor(), normalize])
+        
+        
+        self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor(), Binary(0.4)])
+        
+         
         self.train = train
         self.numSeg = numSeg
         self.sequence = sequence
@@ -82,53 +92,29 @@ class makeDataset(Dataset):
         label = self.labels[idx]
         numFrame = self.numFrames[idx]
         inpSeqSegs = []
-        self.spatial_transform.randomize_parameters()
-        if self.sequence is True:
-            if numFrame <= self.stackSize:
-                frameStart = np.ones(self.numSeg)
-            else:
-                frameStart = np.linspace(1, numFrame - self.stackSize, self.numSeg)
-            for startFrame in frameStart:
-                inpSeq = []
-                for k in range(self.stackSize):
-                    i = k + int(startFrame)
-                    fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
-                    img = Image.open(fl_name)
-                    inpSeq.append(self.spatial_transform(img.convert('L'), inv=True, flow=True))
-                    # fl_names.append(fl_name)
-                    fl_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
-                    img = Image.open(fl_name)
-                    inpSeq.append(self.spatial_transform(img.convert('L'), inv=False, flow=True))
-                inpSeqSegs.append(torch.stack(inpSeq, 0).squeeze())
-            inpSeqSegs = torch.stack(inpSeqSegs, 0)
-        else:
-            if numFrame <= self.stackSize:
-                startFrame = 1
-            else:
-                if self.phase == 'train':
-                    startFrame = random.randint(1, numFrame - self.stackSize)
-                else:
-                    startFrame = np.ceil((numFrame - self.stackSize)/2)
-            inpSeq = []
-            for k in range(self.stackSize):
-                i = k + int(startFrame)
-                fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
-                img = Image.open(fl_name)
-                # fl_names.append(fl_name)
-                f2_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
-                img2 = Image.open(f2_name)
-                inpSeq.append((self.spatial_transform(img.convert('L'), inv=False, flow=True),
-                               self.spatial_transform(img2.convert('L'), inv=False, flow=True)))
-            inpSeqSegs = torch.stack(inpSeq, 0).squeeze(1)
+        self.spatial_transform0.randomize_parameters()
+    
+        inpSeqX = []
+        inpSeqY = []
+     
         inpSeqF = []
-        for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
+        mapSeq = []
+        for i in np.linspace(1, numFrame, self.stackSize, endpoint=False):
+            fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
+            img = Image.open(fl_name)
+            inpSeqX.append(self.spatial_rgb(img.convert('L'), inv=True, flow=True))
+            # fl_names.append(fl_name)
+            f1_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
+            img2 = Image.open(f1_name)
+            inpSeqY.append(self.spatial_rgb(img2.convert('L'), inv=False, flow=True))
+
             fl_name = vid_nameF + '/' + 'rgb' + str(int(np.floor(i))).zfill(4) + self.fmt
             img = Image.open(fl_name)
             flag=1
             j=i
             while(flag):
                 
-                maps_name = vid_name + '/' + 'map' + str(int(np.floor(j))).zfill(4) + self.fmt
+                maps_name = vid_nameF + '/' + 'map' + str(int(np.floor(j))).zfill(4) + self.fmt
                 try:
                     mappa = Image.open(fl_name)
                     flag=0
@@ -139,8 +125,12 @@ class makeDataset(Dataset):
                         j= 2*i-j #j=i+1 j-i=1 --> j=i-1
                     continue
 
-            inpSeqF.append(self.spatial_transform(img.convert('RGB')))
+            
+            inpSeqF.append(self.spatial_rgb(img.convert('RGB')))
             mapSeq.append(self.spatial_transform_map(mappa.convert('L'))) #Grayscale
+
+        inpSeqSegs = torch.stack([torch.stack(inpSeqX, 0).squeeze(1),torch.stack(inpSeqY, 0).squeeze(1)],0).permute(1,0,2,3)
+
         inpSeqF = torch.stack(inpSeqF, 0)
         mapSeq = torch.stack(mapSeq, 0)
         return inpSeqSegs, inpSeqF, mapSeq, label#, vid_nameF#, fl_name
