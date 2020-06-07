@@ -4,14 +4,14 @@ from spatial_transforms import (Compose, ToTensor, CenterCrop, Scale, Normalize,
                                 RandomHorizontalFlip)
 from attentionmodel_ml import *
 from colorization_block import colorization
-from makeDatasetMS import makeDataset
+from makeDatasetColorization import makeDataset
 import argparse
 import sys
 import os
 from tensorboardX import SummaryWriter
 
 def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir, seqLen, trainBatchSize,
-             valBatchSize, numEpochs, lr1, decay_factor, decay_step, memSize, regressor):
+             valBatchSize, numEpochs, lr1, decay_factor, decay_step, memSize):
 
     if dataset == 'gtea61':
         num_classes = 61
@@ -25,7 +25,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         print('Dataset not found')
         sys.exit()
 
-    model_folder = os.path.join('./', out_dir, dataset, 'rgb', 'stage'+str(stage))  # Dir for saving models and log files
+    model_folder = os.path.join('./', out_dir, dataset, 'Color')  # Dir for saving models and log files
     # Create the dir
     if os.path.exists(model_folder):
         print('Directory {} exists!'.format(model_folder))
@@ -46,7 +46,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     spatial_transform = Compose([Scale(256), RandomHorizontalFlip(), MultiScaleCornerCrop([1, 0.875, 0.75, 0.65625], 224)])
 
     vid_seq_train = makeDataset(train_data_dir,
-                                spatial_transform=spatial_transform, seqLen=seqLen, fmt='.png',phase='train', regressor=regressor)
+                                spatial_transform=spatial_transform, seqLen=seqLen, fmt='.png',phase='train')
 
     train_loader = torch.utils.data.DataLoader(vid_seq_train, batch_size=trainBatchSize,
                             shuffle=True, num_workers=4, pin_memory=True)
@@ -54,7 +54,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
 
         vid_seq_val = makeDataset(val_data_dir,
                                    spatial_transform=Compose([Scale(256), CenterCrop(224)]),
-                                   seqLen=seqLen, fmt='.png',phase='test', regressor=regressor)
+                                   seqLen=seqLen, fmt='.png',phase='test')
 
         val_loader = torch.utils.data.DataLoader(vid_seq_val, batch_size=valBatchSize,
                                 shuffle=False, num_workers=2, pin_memory=True)
@@ -65,19 +65,37 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
 
     train_params = []
     if stage == 1:
-
-        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize, regressor=regressor)
+        raise "Stage must be 2"
+        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize)
         model.train(False)
         for params in model.parameters():
             params.requires_grad = False
     else:
 
-        model = colorization(num_classes=num_classes, mem_size=memSize, regressor=regressor)
+        model = colorization(num_classes=num_classes, mem_size=memSize)
         model.attML.load_state_dict(torch.load(stage1_dict))
         model.train(True)
         model.attML.train(False)
-        for params in model.parameters():
+
+        for params in model.bn1.parameters():
             params.requires_grad = True
+            train_params += [params]
+        for params in model.relu.parameters():
+            params.requires_grad = True
+            train_params += [params]
+        for params in model.maxpool.parameters():
+            params.requires_grad = True
+            train_params += [params]
+        for params in model.residual_block.parameters():
+            params.requires_grad = True
+            train_params += [params]
+        for params in model.conv2.parameters():
+            params.requires_grad = True
+            train_params += [params]
+        for params in model.deconv.parameters():
+            params.requires_grad = True
+            train_params += [params]
+
         for params in model.attML.parameters():
             params.requires_grad = False
         #
@@ -111,21 +129,23 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             optimizer_fn.zero_grad()
             inputVariable = Variable(flow.permute(1, 0, 2, 3, 4).cuda())
             labelVariable = Variable(targets.cuda())
-            trainSamples += inputs.size(0)
+            trainSamples += flow.size(0)
             output_label, output_ms = model(inputVariable)
-                
+            
             loss = loss_fn(output_label, labelVariable)
-            loss.backward()
-            binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
+            print(output_ms.size(), binary_map.size())
+            if stage==2 :
+                loss.backward(retain_graph=True)
+            else:
+                loss.backward()
+            binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
+            binary_map =binary_map.view(-1)
+            output_ms = output_ms.view(-1,2)            
+            
             if stage==2:
-                if regressor:
-                    loss_ms=loss_reg(output_ms.view(seqLen, trainBatchSize, 1, 7, 7), binary_map)
-                    loss_ms.backward()
-                    epoch_loss_ms+=loss_ms.data[0]
-                else:
-                    loss_ms=loss_fn(output_ms.view(seqLen, trainBatchSize, 1, 7, 7), binary_map)
-                    loss_ms.backward()
-                    epoch_loss_ms+=loss_ms.data[0]
+                loss_ms=loss_fn(output_ms, binary_map)
+                loss_ms.backward()
+                epoch_loss_ms+=loss_ms.data[0]
         
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
@@ -160,16 +180,19 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     output_label, output_ms = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.data[0]
-                    binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
+                    binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
+                    binary_map = binary_map.view(-1)
+                    output_ms = output_ms.view(-1,2)
+                    
                     if stage==2:
                         if regressor:
-                            loss_ms=loss_reg(output_ms.view(seqLen, valBatchSize, 1, 7, 7), binary_map)
+                            loss_ms=loss_reg(output_ms, binary_map)
                             
-                            epoch_loss_ms+=loss_ms.data[0]
+                            epoch_loss_ms_val+=loss_ms.data[0]
                         else:
-                            loss_ms=loss_fn(output_ms.view(seqLen, valBatchSize, 1, 7, 7), binary_map)
-                            
-                            epoch_loss_ms+=loss_ms.data[0]
+                            loss_ms=loss_fn(output_ms, binary_map)
+                           
+                            epoch_loss_ms_val+=loss_ms.data[0]
                                 
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += (predicted == targets.cuda()).sum()
@@ -223,7 +246,6 @@ def __main__():
     parser.add_argument('--stepSize', type=float, default=[25, 75, 150], nargs="+", help='Learning rate decay step')
     parser.add_argument('--decayRate', type=float, default=0.1, help='Learning rate decay rate')
     parser.add_argument('--memSize', type=int, default=512, help='ConvLSTM hidden state size')
-    parser.add_argument('--regressor', type=bool, default=False, help='Regression version of MS task')
 
     args = parser.parse_args()
 
@@ -241,10 +263,10 @@ def __main__():
     stepSize = args.stepSize
     decayRate = args.decayRate
     memSize = args.memSize
-    regressor = args.regressor
+    
 
     main_run(dataset, stage, trainDatasetDir, valDatasetDir, stage1Dict, outDir, seqLen, trainBatchSize,
-             valBatchSize, numEpochs, lr1, decayRate, stepSize, memSize, regressor)
+             valBatchSize, numEpochs, lr1, decayRate, stepSize, memSize)
 
 __main__()
     
