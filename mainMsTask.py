@@ -24,7 +24,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         print('Dataset not found')
         sys.exit()
 
-    model_folder = os.path.join('./', out_dir, dataset, 'MS')  # Dir for saving models and log files
+    model_folder = os.path.join('./', out_dir, dataset, 'MS',str(stage))  # Dir for saving models and log files
     # Create the dir
     if os.path.exists(model_folder):
         print('Directory {} exists!'.format(model_folder))
@@ -151,6 +151,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         numCorrTrain = 0
         trainSamples = 0
         iterPerEpoch = 0
+        epoch_loss_ms = 0
         model.lstm_cell.train(True)
         model.classifier.train(True)
         writer.add_scalar('lr', optimizer_fn.param_groups[0]['lr'], epoch+1)
@@ -172,17 +173,24 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             labelVariable = Variable(targets.cuda())
             trainSamples += inputs.size(0)
             output_label, output_ms = model(inputVariable)
-                
+            
             loss = loss_fn(output_label, labelVariable)
-            loss.backward()
-            binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
+
+            if stage==2 :
+                loss.backward(retain_graph=True)
+            else:
+                loss.backward()
+            binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
+            binary_map =binary_map.view(-1)
+            output_ms = output_ms.view(-1,2)            
+            
             if stage==2:
                 if regressor:
-                    loss_ms=loss_reg(output_ms.view(seqLen, trainBatchSize, 1, 7, 7), binary_map)
+                    loss_ms=loss_reg(output_ms, binary_map)
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
                 else:
-                    loss_ms=loss_fn(output_ms.view(seqLen, trainBatchSize, 1, 7, 7), binary_map)
+                    loss_ms=loss_fn(output_ms, binary_map)
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
         
@@ -210,6 +218,8 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 val_iter = 0
                 val_samples = 0
                 numCorr = 0
+                epoch_loss_ms_val=0
+                
                 for j, (inputs, binary_map, targets) in enumerate(val_loader):
                     val_iter += 1
                     val_samples += inputs.size(0)
@@ -218,16 +228,18 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     output_label, output_ms = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.data[0]
-                    binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
+                    binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
+                    binary_map = binary_map.view(-1)
+                    output_ms = output_ms.view(-1,2)
                     if stage==2:
                         if regressor:
-                            loss_ms=loss_reg(output_ms.view(seqLen, valBatchSize, 1, 7, 7), binary_map)
+                            loss_ms=loss_reg(output_ms, binary_map)
                             
-                            epoch_loss_ms+=loss_ms.data[0]
+                            epoch_loss_ms_val+=loss_ms.data[0]
                         else:
-                            loss_ms=loss_fn(output_ms.view(seqLen, valBatchSize, 1, 7, 7), binary_map)
+                            loss_ms=loss_fn(output_ms, binary_map)
                            
-                            epoch_loss_ms+=loss_ms.data[0]
+                            epoch_loss_ms_val+=loss_ms.data[0]
                                 
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += (predicted == targets.cuda()).sum()
@@ -236,7 +248,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 if stage ==2:
                     avg_loss_ms= epoch_loss_ms/iterPerEpoch
                     #avg_loss = avg_loss + avg_loss_ms 
-                    val_log_loss_ms.write('Val Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_val_loss_ms))
+                    val_log_loss_ms.write('Val Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_loss_ms))
                 print('Val: Epoch = {} | Loss {} | Accuracy = {}'.format(epoch + 1, avg_val_loss, val_accuracy))
                 writer.add_scalar('val/epoch_loss', avg_val_loss, epoch + 1)
                 writer.add_scalar('val/accuracy', val_accuracy, epoch + 1)
