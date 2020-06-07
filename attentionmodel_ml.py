@@ -41,9 +41,8 @@ class attentionModel_ml(nn.Module):
         self.conv = nn.Sequential(nn.ReLU(inplace=True),
             nn.Conv2d(512, 100, 1, stride=1, padding=0, dilation=1, groups=1, bias=True))
         if not(regressor):
-            self.clas=nn.Sequential(
-                nn.Linear(7*7*100,49),
-                nn.Softmax(1))
+            self.clas=nn.Linear(7*7*100,2*49)
+            self.soft=nn.Softmax(2)
         else:
             self.clas=nn.Sequential(
                 nn.Linear(7*7*100,49))
@@ -53,7 +52,7 @@ class attentionModel_ml(nn.Module):
         state = (Variable(torch.zeros((inputVariable.size(1), self.mem_size, 7, 7)).cuda()),
                  Variable(torch.zeros((inputVariable.size(1), self.mem_size, 7, 7)).cuda()))
         output_msnet = []
-        for t in range(inputVariable.size(0)):
+        for t in range(inputVariable.size(0)): #frame
             logit, feature_conv, feature_convNBN = self.resNet(inputVariable[t])
             bz, nc, h, w = feature_conv.size()
             feature_conv1 = feature_conv.view(bz, nc, h*w)
@@ -65,12 +64,13 @@ class attentionModel_ml(nn.Module):
             attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
 
             x = self.conv(attentionFeat)
-            x = x.view(x.size(0), -1)
-
-            output_msnet.append( self.clas(x))
+            x = x.view(x.size(0), -1) #32,4900
+            x = self.clas(x).view(x.size(0),7*7,2)
+            x = self.soft(x)
+            output_msnet.append(x)
             state = self.lstm_cell(attentionFeat, state)
 
-        output_msnet = torch.stack(output_msnet, 0)
+        output_msnet = torch.stack(output_msnet, 0) #7*32*49*2
         feats1 = self.avgpool(state[1]).view(state[1].size(0), -1)
         feats = self.classifier(feats1)
         return feats, output_msnet
