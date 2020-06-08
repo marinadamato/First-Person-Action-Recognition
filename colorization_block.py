@@ -9,6 +9,7 @@ from objectAttentionModelConvLSTM import attentionModel
 from PIL import Image
 import numpy as np
 import cv2
+from spatial_transforms import Normalize
 
 class residual_block(nn.Module):
     def __init__(self):
@@ -51,6 +52,7 @@ class colorization(nn.Module):
         self.attML = attentionModel_ml(num_classes, mem_size, regressor)
     
     def forward(self,inputVariable):
+        normalize = Normalize(mean=255*[0.485, 0.456, 0.406], std=255*[0.229, 0.224, 0.225])
         flow_list =[]
         for t in range(inputVariable.size(0)): 
             x=self.conv1(inputVariable[t])
@@ -64,11 +66,18 @@ class colorization(nn.Module):
 
             x=self.conv2(x) 
             x=self.deconv(x)
-            
+            '''image_list=[]
+            for tensor in x:
+                tensor=normalize(tensor=tensor,inv=False, flow=False)
+                image_list.append(tensor)
+            image_list = torch.stack(image_list, 0)
+            print(image_list.size())'''
             flow_list.append(x)
         flow_list = torch.stack(flow_list, 0)
-        
-        a=cv2.cvtColor(np.uint8(flow_list[0][0].permute(1,2,0).data), cv2.COLOR_RGB2BGR)
+        T=flow_list[0][0].permute(1,2,0).data
+        T=normalize(T,False,False)
+        a=cv2.cvtColor(np.uint8(T), cv2.COLOR_RGB2BGR)
+
         cv2.imwrite("immagine.jpg",a)
         Out=self.attML(flow_list)
         return Out
