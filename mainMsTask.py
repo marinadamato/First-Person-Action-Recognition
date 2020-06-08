@@ -185,11 +185,11 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             output_ms = output_ms.view(-1,2)            
             
             if stage==2:
-                if regressor:
+                if regressor == 1:
                     loss_ms=loss_reg(output_ms, binary_map)
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
-                else:
+                elif regressor == 0:
                     loss_ms=loss_fn(output_ms, binary_map)
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
@@ -232,11 +232,11 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     binary_map = binary_map.view(-1)
                     output_ms = output_ms.view(-1,2)
                     if stage==2:
-                        if regressor:
+                        if regressor == 1:
                             loss_ms=loss_reg(output_ms, binary_map)
                             
                             epoch_loss_ms_val+=loss_ms.data[0]
-                        else:
+                        elif regressor == 0:
                             loss_ms=loss_fn(output_ms, binary_map)
                            
                             epoch_loss_ms_val+=loss_ms.data[0]
