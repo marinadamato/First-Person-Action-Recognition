@@ -35,7 +35,7 @@ class attentionModel(nn.Module):
                 attentionMAP = attentionMAP.view(attentionMAP.size(0), 1, 7, 7)
                 attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
                 state = self.lstm_cell(attentionFeat, state)
-            else if self.attention == 0:
+            elif self.attention == 0:
                 state = self.lstm_cell(feature_conv, state)
         feats1 = self.avgpool(state[1]).view(state[1].size(0), -1)
         feats = self.classifier(feats1)
