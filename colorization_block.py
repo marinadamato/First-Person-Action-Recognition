@@ -67,7 +67,7 @@ class colorization(nn.Module):
             
             flow_list.append(x)
         flow_list = torch.stack(flow_list, 0)
-        print(flow_list[0][0].size())
+        
         a=cv2.cvtColor(np.uint8(flow_list[0][0].permute(1,2,0).data), cv2.COLOR_RGB2BGR)
         cv2.imwrite("immagine.jpg",a)
         Out=self.attML(flow_list)
