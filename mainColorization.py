@@ -120,6 +120,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         numCorrTrain = 0
         trainSamples = 0
         iterPerEpoch = 0
+        epoch_loss_ms = 0
         
         writer.add_scalar('lr', optimizer_fn.param_groups[0]['lr'], epoch+1)
         for i, (flow, _ ,binary_map, targets) in enumerate(train_loader):
@@ -133,7 +134,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             output_label, output_ms = model(inputVariable)
             
             loss = loss_fn(output_label, labelVariable)
-            print(output_ms.size(), binary_map.size())
+            
             if stage==2 :
                 loss.backward(retain_graph=True)
             else:
@@ -171,9 +172,10 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 val_iter = 0
                 val_samples = 0
                 numCorr = 0
+                epoch_loss_ms_val = 0
                 for j, (flow, _, binary_map, targets) in enumerate(val_loader):
                     val_iter += 1
-                    val_samples += inputs.size(0)
+                    val_samples += flow.size(0)
                     
                     inputVariable = Variable(flow.permute(1, 0, 2, 3, 4).cuda(), volatile=True)
                     labelVariable = Variable(targets.cuda(async=True), volatile=True)
@@ -185,14 +187,9 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     output_ms = output_ms.view(-1,2)
                     
                     if stage==2:
-                        if regressor:
-                            loss_ms=loss_reg(output_ms, binary_map)
-                            
-                            epoch_loss_ms_val+=loss_ms.data[0]
-                        else:
-                            loss_ms=loss_fn(output_ms, binary_map)
-                           
-                            epoch_loss_ms_val+=loss_ms.data[0]
+                        loss_ms=loss_fn(output_ms, binary_map)
+                        
+                        epoch_loss_ms_val+=loss_ms.data[0]
                                 
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += (predicted == targets.cuda()).sum()
@@ -201,7 +198,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 if stage ==2:
                     avg_loss_ms= epoch_loss_ms/iterPerEpoch
                     #avg_loss = avg_loss + avg_loss_ms 
-                    val_log_loss_ms.write('Val Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_val_loss_ms))
+                    val_log_loss_ms.write('Val Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_loss_ms))
                 print('Val: Epoch = {} | Loss {} | Accuracy = {}'.format(epoch + 1, avg_val_loss, val_accuracy))
                 writer.add_scalar('val/epoch_loss', avg_val_loss, epoch + 1)
                 writer.add_scalar('val/accuracy', val_accuracy, epoch + 1)
