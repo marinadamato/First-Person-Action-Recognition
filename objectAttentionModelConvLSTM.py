@@ -25,7 +25,7 @@ class attentionModel(nn.Module):
                  Variable(torch.zeros((inputVariable.size(1), self.mem_size, 7, 7)).cuda()))
         for t in range(inputVariable.size(0)):
             logit, feature_conv, feature_convNBN = self.resNet(inputVariable[t])
-            if self.attention: 
+            if self.attention == 1: 
                 bz, nc, h, w = feature_conv.size()
                 feature_conv1 = feature_conv.view(bz, nc, h*w)
                 probs, idxs = logit.sort(1, True)
@@ -35,7 +35,7 @@ class attentionModel(nn.Module):
                 attentionMAP = attentionMAP.view(attentionMAP.size(0), 1, 7, 7)
                 attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
                 state = self.lstm_cell(attentionFeat, state)
-            else:
+            else if self.attention == 0:
                 state = self.lstm_cell(feature_conv, state)
         feats1 = self.avgpool(state[1]).view(state[1].size(0), -1)
         feats = self.classifier(feats1)
