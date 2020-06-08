@@ -68,7 +68,7 @@ class makeDataset(Dataset):
             root_dir, stackSize, phase)
         normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.spatial_transform0 = spatial_transform
-        self.spatial_rgb= Compose([self.spatial_transform0, ToTensor(), normalize])
+        self.spatial_rgb= Compose([self.spatial_transform0, ToTensor()])
         
         
         self.spatial_transform_map = Compose([self.spatial_transform0, Scale(7), ToTensor(), Binary(0.4)])
