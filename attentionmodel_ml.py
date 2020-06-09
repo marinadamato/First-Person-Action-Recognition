@@ -36,6 +36,7 @@ class attentionModel_ml(nn.Module):
         self.dropout = nn.Dropout(0.7)
         self.fc = nn.Linear(mem_size, self.num_classes)
         self.classifier = nn.Sequential(self.dropout, self.fc)
+        self.regressor=regressor
 
         #msNet
         self.conv = nn.Sequential(nn.ReLU(inplace=True),
@@ -65,8 +66,11 @@ class attentionModel_ml(nn.Module):
 
             x = self.conv(attentionFeat)
             x = x.view(x.size(0), -1) #32,4900
-            x = self.clas(x).view(x.size(0),7*7,2)
-            x = self.soft(x)
+            if self.regressor == 0:
+                x = self.clas(x).view(x.size(0),7*7,2)
+                x = self.soft(x)
+            elif self.regressor == 1:
+                x = self.clas(x).view(x.size(0),7*7)   
             output_msnet.append(x)
             state = self.lstm_cell(attentionFeat, state)
 
