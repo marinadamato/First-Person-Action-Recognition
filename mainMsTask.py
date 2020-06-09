@@ -196,7 +196,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
                 elif regressor == 0:
-                    loss_ms=loss_fms(output_ms, binary_map)
+                    loss_ms=loss_fn(output_ms, binary_map)
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
         
@@ -247,7 +247,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                             
                             epoch_loss_ms_val+=loss_ms.data[0]
                         elif regressor == 0:
-                            loss_ms=loss_fms(output_ms, binary_map)
+                            loss_ms=loss_fn(output_ms, binary_map)
                            
                             epoch_loss_ms_val+=loss_ms.data[0]
                                 
