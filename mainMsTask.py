@@ -72,7 +72,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     else:
 
         model = attentionModel_ml(num_classes=num_classes, mem_size=memSize, regressor=regressor)
-        model.load_state_dict(torch.load(stage1_dict))
+        model.load_state_dict(torch.load(stage1_dict),strict=False)
         model.train(False)
         for params in model.parameters():
             params.requires_grad = False
@@ -136,6 +136,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     model.cuda()
 
     loss_fn = nn.CrossEntropyLoss()
+    loss_fms = nn.NLLLoss()
     loss_reg = nn.MSELoss()
     optimizer_fn = torch.optim.Adam(train_params, lr=lr1, weight_decay=4e-5, eps=1e-4)
 
@@ -180,9 +181,14 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 loss.backward(retain_graph=True)
             else:
                 loss.backward()
-            binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
+            if regressor == 0:
+                binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
+                output_ms = output_ms.view(-1,2)
+            elif regressor == 1:
+                binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
+                output_ms = output_ms.view(-1)
             binary_map =binary_map.view(-1)
-            output_ms = output_ms.view(-1,2)            
+                        
             
             if stage==2:
                 if regressor == 1:
@@ -190,7 +196,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
                 elif regressor == 0:
-                    loss_ms=loss_fn(output_ms, binary_map)
+                    loss_ms=loss_fms(output_ms, binary_map)
                     loss_ms.backward()
                     epoch_loss_ms+=loss_ms.data[0]
         
@@ -228,16 +234,20 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     output_label, output_ms = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.data[0]
-                    binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
-                    binary_map = binary_map.view(-1)
-                    output_ms = output_ms.view(-1,2)
+                    if regressor == 0:
+                        binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
+                        output_ms = output_ms.view(-1,2)
+                    elif regressor == 1:
+                        binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
+                        output_ms = output_ms.view(-1)
+                    binary_map =binary_map.view(-1)
                     if stage==2:
                         if regressor == 1:
                             loss_ms=loss_reg(output_ms, binary_map)
                             
                             epoch_loss_ms_val+=loss_ms.data[0]
                         elif regressor == 0:
-                            loss_ms=loss_fn(output_ms, binary_map)
+                            loss_ms=loss_fms(output_ms, binary_map)
                            
                             epoch_loss_ms_val+=loss_ms.data[0]
                                 
