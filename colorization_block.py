@@ -76,8 +76,15 @@ class colorization(nn.Module):
         flow_list = torch.stack(flow_list, 0)
         T=flow_list[0][0].permute(1,2,0).data
         T=normalize(T,False,False)
-        a=cv2.cvtColor(np.uint8(T), cv2.COLOR_RGB2BGR)
+        beforeX=normalize(inputVariable[0][0][0].data,False,False)
+        beforeX=cv2.cvtColor(np.uint8(beforeX),cv2.COLOR_GRAY2RGB)
+        beforeY=normalize(inputVariable[0][0][0].data,False,False)
+        beforeY=cv2.cvtColor(np.uint8(beforeY),cv2.COLOR_GRAY2RGB)
+        after=cv2.cvtColor(np.uint8(T), cv2.COLOR_BGR2RGB)
+        after=cv2.cvtColor(after, cv2.COLOR_RGB2BGR)
 
-        cv2.imwrite("immagine.jpg",a)
+        cv2.imwrite("immagine_beforeX.jpg",beforeX)
+        cv2.imwrite("immagine_beforeY.jpg",beforeY)
+        cv2.imwrite("immagine_after.jpg",after)
         Out=self.attML(flow_list)
         return Out
