@@ -52,7 +52,7 @@ def gen_split(root_dir, stackSize, phase):
                                    
                                 
                     class_id += 1
-    return DatasetX, DatasetY, DatasetF, Labels, NumFrames
+    return DatasetX, DatasetY, DatasetF, Maps, Labels, NumFrames
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform=None, sequence=False, stackSize=5,
@@ -64,7 +64,7 @@ class makeDataset(Dataset):
                 on a sample.
         """
 
-        self.imagesX, self.imagesY, self.imagesF, self.labels, self.numFrames = gen_split(
+        self.imagesX, self.imagesY, self.imagesF, self.maps, self.labels, self.numFrames = gen_split(
             root_dir, stackSize, phase)
         normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.spatial_transform0 = spatial_transform
@@ -89,6 +89,7 @@ class makeDataset(Dataset):
         vid_nameX = self.imagesX[idx]
         vid_nameY = self.imagesY[idx]
         vid_nameF = self.imagesF[idx]
+        map_folder = self.maps[idx]
         label = self.labels[idx]
         numFrame = self.numFrames[idx]
         inpSeqSegs = []
@@ -114,9 +115,9 @@ class makeDataset(Dataset):
             j=i
             while(flag):
                 
-                maps_name = vid_nameF + '/' + 'map' + str(int(np.floor(j))).zfill(4) + self.fmt
+                maps_name =  map_folder + '/' + 'map' + str(int(np.floor(j))).zfill(4) + self.fmt
                 try:
-                    mappa = Image.open(fl_name)
+                    mappa = Image.open(maps_name)
                     flag=0
                 except:
                     if j<=i:
