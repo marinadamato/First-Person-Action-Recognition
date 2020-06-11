@@ -31,7 +31,7 @@ class attentionModel(nn.Module):
                 probs, idxs = logit.sort(1, True)
                 class_idx = idxs[:, 0]
                 cam = torch.bmm(self.weight_softmax[class_idx].unsqueeze(1), feature_conv1)
-                attentionMAP = F.softmax(cam.squeeze(1), dim=1)
+                attentionMAP = torch.softmax(cam.squeeze(1), dim=1)
                 attentionMAP = attentionMAP.view(attentionMAP.size(0), 1, 7, 7)
                 attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
                 state = self.lstm_cell(attentionFeat, state)
