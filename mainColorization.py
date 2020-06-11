@@ -66,10 +66,6 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     train_params = []
     if stage == 1:
         raise "Stage must be 2"
-        model = attentionModel_ml(num_classes=num_classes, mem_size=memSize)
-        model.train(False)
-        for params in model.parameters():
-            params.requires_grad = False
     else:
 
         model = colorization(num_classes=num_classes, mem_size=memSize)
@@ -98,12 +94,10 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
 
         for params in model.attML.parameters():
             params.requires_grad = False
-        #
 
     model.cuda()
 
     loss_fn = nn.CrossEntropyLoss()
-    loss_reg = nn.MSELoss()
     optimizer_fn = torch.optim.Adam(train_params, lr=lr1, weight_decay=4e-5, eps=1e-4)
 
     optim_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer_fn, milestones=decay_step,
