@@ -19,10 +19,10 @@ class attentionMap(nn.Module):
         bz, nc, h, w = feature_conv.size()
         feature_conv = feature_conv.view(bz, nc, h*w)
 
-        h_x = F.softmax(logit, dim=1).data
+        h_x = torch.softmax(logit, dim=1).data
         probs, idx = h_x.sort(1, True)
         cam_img = torch.bmm(self.weight_softmax[idx[:, 0]].unsqueeze(1), feature_conv).squeeze(1)
-        cam_img = F.softmax(cam_img, 1).data
+        cam_img = torch.softmax(cam_img, 1).data
         cam_img = cam_img.cpu().numpy()
         cam_img = cam_img.reshape(h, w)
         cam_img = cam_img - np.min(cam_img)
