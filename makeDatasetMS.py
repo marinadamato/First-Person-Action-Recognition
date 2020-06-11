@@ -86,9 +86,9 @@ class makeDataset(Dataset):
             j=i
             while(flag):
                 
-                maps_name = vid_name + '/' + 'map' + str(int(np.floor(j))).zfill(4) + self.fmt
+                maps_name = map_name + '/' + 'map' + str(int(np.floor(j))).zfill(4) + self.fmt
                 try:
-                    mappa = Image.open(fl_name)
+                    mappa = Image.open(maps_name)
                     flag=0
                 except:
                     if j<=i:
