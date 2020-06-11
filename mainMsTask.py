@@ -187,23 +187,23 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             elif regressor == 1:
                 binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
                 output_ms = output_ms.view(-1)
-            binary_map =binary_map.view(-1)
+            binary_map =binary_map.contiguous().view(-1)
                         
             
             if stage==2:
                 if regressor == 1:
                     loss_ms=loss_reg(output_ms, binary_map)
                     loss_ms.backward()
-                    epoch_loss_ms+=loss_ms.data[0]
+                    epoch_loss_ms+=loss_ms.item()
                 elif regressor == 0:
                     loss_ms=loss_fn(output_ms, binary_map)
                     loss_ms.backward()
-                    epoch_loss_ms+=loss_ms.data[0]
+                    epoch_loss_ms+=loss_ms.item()
         
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
-            numCorrTrain += (predicted == targets.cuda()).sum()
-            epoch_loss += loss.data[0]
+            numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
+            epoch_loss += loss.item()
         avg_loss = epoch_loss/iterPerEpoch
         if stage ==2:
             avg_loss_ms= epoch_loss_ms/iterPerEpoch
@@ -233,26 +233,26 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     labelVariable = Variable(targets.cuda(async=True), volatile=True)
                     output_label, output_ms = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
-                    val_loss_epoch += val_loss.data[0]
+                    val_loss_epoch += val_loss.item()
                     if regressor == 0:
                         binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).type(torch.LongTensor).cuda())
                         output_ms = output_ms.view(-1,2)
                     elif regressor == 1:
                         binary_map = Variable(binary_map.permute(1, 0, 2, 3, 4).cuda())
                         output_ms = output_ms.view(-1)
-                    binary_map =binary_map.view(-1)
+                    binary_map =binary_map.contiguous().view(-1)
                     if stage==2:
                         if regressor == 1:
                             loss_ms=loss_reg(output_ms, binary_map)
                             
-                            epoch_loss_ms_val+=loss_ms.data[0]
+                            epoch_loss_ms_val+=loss_ms.item()
                         elif regressor == 0:
                             loss_ms=loss_fn(output_ms, binary_map)
                            
-                            epoch_loss_ms_val+=loss_ms.data[0]
+                            epoch_loss_ms_val+=loss_ms.item()
                                 
                     _, predicted = torch.max(output_label.data, 1)
-                    numCorr += (predicted == targets.cuda()).sum()
+                    numCorr += torch.sum(predicted == labelVariable.data).data.item()
                 val_accuracy = (numCorr / val_samples) * 100
                 avg_val_loss = val_loss_epoch / val_iter
                 if stage ==2:
@@ -328,3 +328,5 @@ def __main__():
 
 __main__()
     
+
+ 
