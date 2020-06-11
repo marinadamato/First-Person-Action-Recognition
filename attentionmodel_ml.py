@@ -6,21 +6,6 @@ from torch.autograd import Variable
 from MyConvLSTMCell import *
 from objectAttentionModelConvLSTM import attentionModel
 
-'''class msNet(nn.Module):
-    def __init__(self):
-        super(msNet, self).__init__()
-        self.conv = nn.Sequential(nn.ReLU(inplace=True),
-            nn.Conv2d(512, 100, 3, stride=1, padding=1, dilation=1, groups=1, bias=True))
-        self.clas=nn.Sequential(
-            nn.Linear(7*7*100,49),
-            nn.Softmax(1))
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = x.view(x.size(0), -1)
-        x = self.clas(x)
-        return'''
-
 
 
 class attentionModel_ml(nn.Module):
@@ -60,7 +45,7 @@ class attentionModel_ml(nn.Module):
             probs, idxs = logit.sort(1, True)
             class_idx = idxs[:, 0]
             cam = torch.bmm(self.weight_softmax[class_idx].unsqueeze(1), feature_conv1)
-            attentionMAP = F.softmax(cam.squeeze(1), dim=1)
+            attentionMAP = torch.softmax(cam.squeeze(1), dim=1)
             attentionMAP = attentionMAP.view(attentionMAP.size(0), 1, 7, 7)
             attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
 
