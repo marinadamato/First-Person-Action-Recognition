@@ -8,7 +8,7 @@ from MyConvLSTMCell import *
 from objectAttentionModelConvLSTM import attentionModel
 from PIL import Image
 import numpy as np
-import cv2
+from torchvision.utils import save_image
 from spatial_transforms import Normalize
 
 class residual_block(nn.Module):
@@ -46,7 +46,9 @@ class colorization(nn.Module):
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
     
         self.residual_block= residual_block() 
-
+        self.residual_block=[]
+        for i in range(7):
+            self.residual_block.append(residual_block())
         self.conv2 = nn.Conv2d(64, 3, kernel_size= 1, stride=1, padding=0, bias=False)
         self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=2, groups=3, bias=False)
         self.attML = attentionModel_ml(num_classes, mem_size, regressor)
@@ -62,7 +64,7 @@ class colorization(nn.Module):
             x=self.maxpool(x)
 
             for i in range(7):
-                x=self.residual_block(x)
+                x=self.residual_block[i](x)
 
             x=self.conv2(x) 
             x=self.deconv(x)
@@ -74,17 +76,7 @@ class colorization(nn.Module):
             print(image_list.size())'''
             flow_list.append(x)
         flow_list = torch.stack(flow_list, 0)
-        T=flow_list[0][0].permute(1,2,0).data
-        T=normalize(T,False,False)
-        beforeX=normalize(inputVariable[0][0][0].data,False,False)
-        beforeX=cv2.cvtColor(np.uint8(beforeX),cv2.COLOR_GRAY2RGB)
-        beforeY=normalize(inputVariable[0][0][0].data,False,False)
-        beforeY=cv2.cvtColor(np.uint8(beforeY),cv2.COLOR_GRAY2RGB)
-        after=cv2.cvtColor(np.uint8(T), cv2.COLOR_BGR2RGB)
-        after=cv2.cvtColor(after, cv2.COLOR_RGB2BGR)
-
-        cv2.imwrite("immagine_beforeX.jpg",beforeX)
-        cv2.imwrite("immagine_beforeY.jpg",beforeY)
-        cv2.imwrite("immagine_after.jpg",after)
+        T=flow_list[0][0].data
+        save_image(T, "color.jpg")
         Out=self.attML(flow_list)
         return Out
