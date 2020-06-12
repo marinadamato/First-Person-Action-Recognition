@@ -47,7 +47,7 @@ class colorization(nn.Module):
         self.residual_block=[]
         for i in range(7):
             self.residual_block.append(residual_block())
-        self.residual_block = nn.Sequential(self.residual_block)
+        self.residual_block = nn.Sequential(*self.residual_block)
         self.conv2 = nn.Conv2d(64, 3, kernel_size= 1, stride=1, padding=0, bias=False)
         self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=2, groups=3, bias=False)
         self.attML = attentionModel_ml(num_classes, mem_size, regressor)
