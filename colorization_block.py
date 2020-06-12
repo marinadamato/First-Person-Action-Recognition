@@ -40,7 +40,7 @@ class colorization(nn.Module):
         super(colorization, self).__init__()
         self.conv1 = nn.Conv2d(2, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
-        
+        self.i=0
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.LeakyReLU(negative_slope=0.01, inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
@@ -53,7 +53,7 @@ class colorization(nn.Module):
         self.attML = attentionModel_ml(num_classes, mem_size, regressor)
     
     def forward(self,inputVariable):
-        normalize = Normalize(mean=255*[0.485, 0.456, 0.406], std=255*[0.229, 0.224, 0.225])
+        
         flow_list =[]
         for t in range(inputVariable.size(0)): 
             x=self.conv1(inputVariable[t])
@@ -67,18 +67,16 @@ class colorization(nn.Module):
 
             x=self.conv2(x) 
             x=self.deconv(x)
-            '''image_list=[]
-            for tensor in x:
-                tensor=normalize(tensor=tensor,inv=False, flow=False)
-                image_list.append(tensor)
-            image_list = torch.stack(image_list, 0)
-            print(image_list.size())'''
             flow_list.append(x)
         flow_list = torch.stack(flow_list, 0)
-        T=flow_list[0][0].data
-        T=normalize(T, False, False)
-        save_image(inputVariable[0][0][0], 'x.jpg')
-        save_image(inputVariable[0][0][1], 'y.jpg')
-        save_image(T, "color.jpg")
+        
+        if self.i==25:
+            T=flow_list[0][0].data
+            save_image(inputVariable[0][0][0], 'x.jpg')
+            save_image(inputVariable[0][0][1], 'y.jpg')
+            save_image(255*T, "color.jpg")
+            self.i=0
+        self.i+=1
         Out=self.attML(flow_list)
+        
         return Out
