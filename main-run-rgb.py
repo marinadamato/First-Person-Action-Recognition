@@ -165,8 +165,8 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
             loss.backward()
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
-            numCorrTrain += (predicted == targets.cuda()).sum()
-            epoch_loss += loss.data[0]
+            numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
+            epoch_loss += loss.item()
         avg_loss = epoch_loss/iterPerEpoch
         trainAccuracy = (numCorrTrain / trainSamples) * 100
 
@@ -191,7 +191,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.data[0]
                     _, predicted = torch.max(output_label.data, 1)
-                    numCorr += (predicted == targets.cuda()).sum()
+                   numCorr += torch.sum(predicted == labelVariable.data).data.item()
                 val_accuracy = (numCorr / val_samples) * 100
                 avg_val_loss = val_loss_epoch / val_iter
                 print('Val: Epoch = {} | Loss {} | Accuracy = {}'.format(epoch + 1, avg_val_loss, val_accuracy))
