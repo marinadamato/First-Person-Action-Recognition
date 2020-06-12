@@ -189,7 +189,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                     labelVariable = Variable(targets.cuda(async=True), volatile=True)
                     output_label, _ = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
-                    val_loss_epoch += val_loss.data[0]
+                    val_loss_epoch += val_loss.item()
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += torch.sum(predicted == labelVariable.data).data.item()
                 val_accuracy = (numCorr / val_samples) * 100
