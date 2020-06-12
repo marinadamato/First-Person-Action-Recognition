@@ -77,6 +77,9 @@ class colorization(nn.Module):
             flow_list.append(x)
         flow_list = torch.stack(flow_list, 0)
         T=flow_list[0][0].data
+        T=normalize(T, False, False)
+        save_image(inputVariable[0][0][0], 'color.jpg')
+        save_image(inputVariable[0][0][1], 'color.jpg')
         save_image(T, "color.jpg")
         Out=self.attML(flow_list)
         return Out
