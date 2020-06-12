@@ -147,12 +147,12 @@ def main_run(dataset, flowModel, rgbModel, stackSize, seqLen, memSize, trainData
             inputVariableFrame = Variable(inputFrame.permute(1, 0, 2, 3, 4).cuda())
             labelVariable = Variable(targets.cuda())
             output_label = model(inputVariableFlow, inputVariableFrame)
-            loss = loss_fn(F.log_softmax(output_label, dim=1), labelVariable)
+            loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
             loss.backward()
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
-            numCorrTrain += (predicted == targets.cuda()).sum()
-            epoch_loss += loss.data[0]
+             numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
+            epoch_loss += loss.item()
         avg_loss = epoch_loss / iterPerEpoch
         trainAccuracy = (numCorrTrain / trainSamples) * 100
         print('Average training loss after {} epoch = {} '.format(epoch + 1, avg_loss))
@@ -173,10 +173,10 @@ def main_run(dataset, flowModel, rgbModel, stackSize, seqLen, memSize, trainData
                     inputVariableFrame = Variable(inputFrame.permute(1, 0, 2, 3, 4).cuda())
                     labelVariable = Variable(targets.cuda())
                     output_label = model(inputVariableFlow, inputVariableFrame)
-                    loss = loss_fn(F.log_softmax(output_label, dim=1), labelVariable)
-                    val_loss_epoch += loss.data[0]
+                    loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
+                    val_loss_epoch += loss.item()
                     _, predicted = torch.max(output_label.data, 1)
-                    numCorr += (predicted == labelVariable.data).sum()
+                   numCorr += torch.sum(predicted == labelVariable.data).data.item()
                 val_accuracy = (numCorr / valSamples) * 100
                 avg_val_loss = val_loss_epoch / val_iter
                 print('Val Loss after {} epochs, loss = {}'.format(epoch + 1, avg_val_loss))
