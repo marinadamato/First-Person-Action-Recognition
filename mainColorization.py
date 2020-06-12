@@ -82,7 +82,8 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
         for params in model.maxpool.parameters():
             params.requires_grad = True
             train_params += [params]
-        for params in model.residual_block.parameters():
+        for res in model.residual_block:
+          for params in res.parameters():
             params.requires_grad = True
             train_params += [params]
         for params in model.conv2.parameters():
