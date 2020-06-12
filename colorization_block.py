@@ -44,8 +44,6 @@ class colorization(nn.Module):
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.LeakyReLU(negative_slope=0.01, inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
-    
-        self.residual_block= residual_block() 
         self.residual_block=[]
         for i in range(7):
             self.residual_block.append(residual_block())
