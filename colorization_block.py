@@ -52,7 +52,7 @@ class colorization(nn.Module):
         self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=2, groups=3, bias=False)
         self.attML = attentionModel_ml(num_classes, mem_size, regressor)
     
-    def forward(self,inputVariable):
+    def forward(self,inputVariable,entropy=None):
         
         flow_list =[]
         for t in range(inputVariable.size(0)): 
@@ -75,8 +75,16 @@ class colorization(nn.Module):
             save_image(inputVariable[0][0][0], 'x.jpg')
             save_image(inputVariable[0][0][1], 'y.jpg')
             save_image(255*T, "color.jpg")
+            print('new image')
             self.i=0
         self.i+=1
-        Out=self.attML(flow_list)
+        if entropy == None :
+            Out=self.attML(flow_list)
+            return Out
+        else:
+            tmp=[]
+            for t in range(flow_list.size(0)):
+                y,_,_=self.attML.resNet(flow_list[t])
+                tmp.append(y)
+            return torch.stack(tmp, 0)
         
-        return Out
