@@ -45,7 +45,7 @@ class colorization(nn.Module):
         self.relu = nn.LeakyReLU(negative_slope=0.01, inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
         self.residual_block=[]
-        for i in range(7):
+        for i in range(4):
             self.residual_block.append(residual_block())
         self.residual_block = nn.Sequential(*self.residual_block)
         self.conv2 = nn.Conv2d(64, 3, kernel_size= 1, stride=1, padding=0, bias=False)
@@ -53,7 +53,6 @@ class colorization(nn.Module):
         self.attML = attentionModel(num_classes, mem_size)
     
     def forward(self,inputVariable,entropy=None):
-        
         flow_list =[]
         for t in range(inputVariable.size(0)): 
             x=self.conv1(inputVariable[t])
