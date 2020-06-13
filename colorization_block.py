@@ -35,7 +35,7 @@ class residual_block(nn.Module):
 
 
 class colorization(nn.Module):
-    def __init__(self,num_classes=61, mem_size=512, regressor=False):
+    def __init__(self,num_classes=61, mem_size=512):
         
         super(colorization, self).__init__()
         self.conv1 = nn.Conv2d(2, 64, kernel_size=7, stride=2, padding=3,
@@ -50,7 +50,7 @@ class colorization(nn.Module):
         self.residual_block = nn.Sequential(*self.residual_block)
         self.conv2 = nn.Conv2d(64, 3, kernel_size= 1, stride=1, padding=0, bias=False)
         self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=2, groups=3, bias=False)
-        self.attML = attentionModel_ml(num_classes, mem_size, regressor)
+        self.attML = attentionModel(num_classes, mem_size)
     
     def forward(self,inputVariable,entropy=None):
         
