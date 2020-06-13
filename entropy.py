@@ -114,7 +114,7 @@ def main_run(dataset, train_data_dir, stage1_dict, out_dir, seqLen, trainBatchSi
             iterPerEpoch += 1
             optimizer_fn.zero_grad()
             flow = flow.permute(1, 0, 2, 3, 4).cuda()
-            logit=model(flow)
+            logit=model(flow,True)
             loss=HLoss()(logit)
             loss.backward()
             optimizer_fn.step()
@@ -123,7 +123,7 @@ def main_run(dataset, train_data_dir, stage1_dict, out_dir, seqLen, trainBatchSi
         avg_loss = epoch_loss/iterPerEpoch
         
         
-        if entropy==1 and loss<min_loss:
+        if loss<min_loss:
             min_loss=loss
             save_path_model = (model_folder + '/model_rgb_state_dict.pth')
             torch.save(model.state_dict(), save_path_model)
