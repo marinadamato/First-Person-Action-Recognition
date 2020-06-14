@@ -147,7 +147,6 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     min_accuracy = 0
 
     for epoch in range(numEpochs):
-        optim_scheduler.step()
         epoch_loss = 0
         numCorrTrain = 0
         trainSamples = 0
@@ -282,6 +281,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     val_log_loss_ms.close()
     writer.export_scalars_to_json(model_folder + "/all_scalars.json")
     writer.close()
+    optim_scheduler.step()
 
 
 def __main__():
