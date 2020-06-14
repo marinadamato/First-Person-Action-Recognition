@@ -91,8 +91,8 @@ class makeDataset(Dataset):
             # fl_names.append(fl_name)
             f1_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
             img2 = Image.open(f1_name)
-            inpSeqY.append(self.spatial_transform(img2.convert('L'), inv=False, flow=True))
+            inpSeqX.append(self.spatial_transform(img2.convert('L'), inv=False, flow=True))
 
-        inpSeqSegs = torch.stack([torch.stack(inpSeqX, 0).squeeze(1),torch.stack(inpSeqY, 0).squeeze(1)],0).permute(1,0,2,3)
-
+        inpSeqSegs = torch.stack(inpSeqX, 0).squeeze(1)
+        
         return inpSeqSegs, label
