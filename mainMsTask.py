@@ -39,6 +39,8 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     val_log_acc = open((model_folder + '/val_log_acc.txt'), 'w')
     train_log_loss_ms= open((model_folder + '/train_log_loss_ms.txt'), 'w')
     val_log_loss_ms = open((model_folder + '/val_log_loss_ms.txt'), 'w')
+    train_log_acc_ms= open((model_folder + '/train_log_acc_ms.txt'), 'w')
+    val_log_acc_ms = open((model_folder + '/val_log_acc_ms.txt'), 'w')
 
     # Data loader
     normalize = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -149,6 +151,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
     for epoch in range(numEpochs):
         epoch_loss = 0
         numCorrTrain = 0
+        numCorrTrain_ms = 0
         trainSamples = 0
         iterPerEpoch = 0
         epoch_loss_ms = 0
@@ -193,21 +196,29 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 if regressor == 1:
                     loss_ms=loss_reg(output_ms, binary_map)
                     loss_ms.backward()
+                    
                     epoch_loss_ms+=loss_ms.item()
                 elif regressor == 0:
                     loss_ms=loss_fn(output_ms, binary_map)
                     loss_ms.backward()
+                    _, predicted = torch.max(output_ms.data, 1)
+                    numCorrTrain_ms += torch.sum(predicted == binary_map.data).data.item()
                     epoch_loss_ms+=loss_ms.item()
         
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
             numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
             epoch_loss += loss.item()
+
+            
         avg_loss = epoch_loss/iterPerEpoch
         if stage ==2:
+            trainAccuracy = (numCorrTrain_ms / trainSamples) * 100
             avg_loss_ms= epoch_loss_ms/iterPerEpoch
             #avg_loss = avg_loss + avg_loss_ms
             train_log_loss_ms.write('Train Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_loss_ms))
+            if regressor == 0:train_log_acc_ms.write('Train Accuracy after {} epochs = {}%\n'.format(epoch + 1, trainAccuracy))
+
         trainAccuracy = (numCorrTrain / trainSamples) * 100
 
         print('Train: Epoch = {} | Loss = {} | Accuracy = {}'.format(epoch+1, avg_loss, trainAccuracy))
@@ -223,6 +234,7 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                 val_iter = 0
                 val_samples = 0
                 numCorr = 0
+                numCorr_ms = 0
                 epoch_loss_ms_val=0
                 
                 for j, (inputs, binary_map, targets) in enumerate(val_loader):
@@ -247,17 +259,21 @@ def main_run(dataset, stage, train_data_dir, val_data_dir, stage1_dict, out_dir,
                             epoch_loss_ms_val+=loss_ms.item()
                         elif regressor == 0:
                             loss_ms=loss_fn(output_ms, binary_map)
-                           
+                            _, predicted = torch.max(output_ms.data, 1)
+                            numCorr_ms += torch.sum(predicted == binary_map.data).data.item()
                             epoch_loss_ms_val+=loss_ms.item()
                                 
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += torch.sum(predicted == labelVariable.data).data.item()
-                val_accuracy = (numCorr / val_samples) * 100
+                
                 avg_val_loss = val_loss_epoch / val_iter
                 if stage ==2:
-                    avg_loss_ms= epoch_loss_ms/iterPerEpoch
+                    avg_loss_ms= epoch_loss_ms_val/ val_iter
+                    val_accuracy = (numCorr_ms / val_samples) * 100
                     #avg_loss = avg_loss + avg_loss_ms 
                     val_log_loss_ms.write('Val Loss MS after {} epochs = {}\n'.format(epoch + 1, avg_loss_ms))
+                    if regressor == 0:val_log_acc_ms.write('Val Accuracy after {} epochs = {}%\n'.format(epoch + 1, val_accuracy))
+                val_accuracy = (numCorr / val_samples) * 100
                 print('Val: Epoch = {} | Loss {} | Accuracy = {}'.format(epoch + 1, avg_val_loss, val_accuracy))
                 writer.add_scalar('val/epoch_loss', avg_val_loss, epoch + 1)
                 writer.add_scalar('val/accuracy', val_accuracy, epoch + 1)
