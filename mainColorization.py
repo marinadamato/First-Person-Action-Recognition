@@ -67,14 +67,14 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
     trainInstances = vid_seq_train.__len__()
     print('Number of samples in the dataset: training = {} | validation = {}'.format(trainInstances, valInstances))
 
-    model = colorization(num_classes=num_classes, mem_size=memSize)
-    model.load_state_dict(torch.load(color_dict),strict=False)
-    model.attML.load_state_dict(torch.load(stage1_dict))
+    model = colorization(num_classes=num_classes)
+    #model.load_state_dict(torch.load(color_dict),strict=False)
+    #model.attML.load_state_dict(torch.load(stage1_dict))
     model.train(True)
-    model.attML.train(False)
-    model.attML.classifier.train(True)
+    #model.attML.train(False)
+    #model.attML.classifier.train(True)
     train_params =[]
-    for params in model.bn1.parameters():
+    '''for params in model.bn1.parameters():
         params.requires_grad = True
         train_params += [params]
     for params in model.relu.parameters():
@@ -97,6 +97,10 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
         params.requires_grad = False
     for params in model.attML.classifier.parameters():
         params.requires_grad = True
+        train_params += [params]'''
+
+    for params in model.parameters():
+        params.requires_grad = True
         train_params += [params]
 
     model.cuda()
@@ -116,13 +120,13 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
         trainSamples = 0
         iterPerEpoch = 0
         model.train(True)
-        model.attML.train(False)
-        model.attML.classifier.train(True)
+        #model.attML.train(False)
+        #model.attML.classifier.train(True)
         writer.add_scalar('lr', optimizer_fn.param_groups[0]['lr'], epoch+1)
         for i, (inputVariable, labelVariable) in enumerate(train_loader):
             train_iter += 1
             iterPerEpoch += 1
-            inputVariable =inputVariable.permute(1, 0, 2, 3, 4).cuda()
+            inputVariable =inputVariable.cuda()
             labelVariable =labelVariable.cuda()
             optimizer_fn.zero_grad()
             trainSamples += inputVariable.size(0)
@@ -151,7 +155,7 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
                 for j, (inputVariable, labelVariable) in enumerate(val_loader):
                     val_iter += 1
                     val_samples += inputVariable.size(0)
-                    inputVariable =inputVariable.permute(1, 0, 2, 3, 4).cuda()
+                    inputVariable =inputVariable.cuda()
                     labelVariable =labelVariable.cuda()
                     output_label, _ = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
