@@ -52,7 +52,7 @@ class attentionModel_flow(nn.Module):
 class twoStreamAttentionModel(nn.Module):
     def __init__(self, flowModel='', frameModel='', stackSize=5, memSize=512, num_classes=61):
         super(twoStreamAttentionModel, self).__init__()
-        self.flowModel = attentionModel_flow(frameModel='', num_classes=num_classes, mem_size=mem_size)
+        self.flowModel = attentionModel_flow(frameModel=frameModel, num_classes=num_classes, mem_size=mem_size)
         if flowModel != '':
             self.flowModel.load_state_dict(torch.load(flowModel))
         self.frameModel = attentionModel(num_classes, memSize)
@@ -63,7 +63,7 @@ class twoStreamAttentionModel(nn.Module):
         self.classifier = nn.Sequential(self.dropout, self.fc2)
 
     def forward(self, inputVariableFlow, inputVariableFrame):
-        _, flowFeats = self.flowModel(inputVariableFlow)
+        _, flowFeats = self.flowModel(inputVariableFlow,inputVariableFrame)
         _, rgbFeats = self.frameModel(inputVariableFrame)
         twoStreamFeats = torch.cat((flowFeats, rgbFeats), 1)
         return self.classifier(twoStreamFeats)
