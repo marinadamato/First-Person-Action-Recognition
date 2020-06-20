@@ -146,13 +146,13 @@ class ResNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        x = self.layer4(x)
+        x2 = self.layer4(x)
 
-        x = self.avgpool(x)
+        x = self.avgpool(x2)
         x1 = x.view(x.size(0), -1)
         x = self.dp(x1)
         x = self.fc_action(x)
-        return x, x1
+        return x, x1, x2
 
 
 def change_key_names(old_params, in_channels):
