@@ -28,7 +28,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         print('Dataset not found')
         sys.exit()
 
-    model_folder = os.path.join('./', outDir, dataset, 'NewtwoStream')  # Dir for saving models and log files
+    model_folder = os.path.join('./', outDir, dataset, 'NewtwoStream',stage)  # Dir for saving models and log files
     # Create the dir
     if os.path.exists(model_folder):
         print('Dir {} exists!'.format(model_folder))
