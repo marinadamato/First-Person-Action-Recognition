@@ -52,7 +52,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
                                  ToTensor(), normalize])
 
     vid_seq_train = makeDataset(trainDatasetDir,spatial_transform=spatial_transform,
-                               sequence=False, numSeg=1, fmt='.png', seqLen=seqLen)
+                               sequence=False, numSeg=1, fmt='.png', seqLen=seqLen, frame_div=True)
 
     train_loader = torch.utils.data.DataLoader(vid_seq_train, batch_size=trainBatchSize,
                             shuffle=True, num_workers=4, pin_memory=True)
@@ -64,7 +64,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         vid_seq_val = makeDataset(valDatasetDir,
                                    spatial_transform=Compose([Scale(256), CenterCrop(224), ToTensor(), normalize]),
                                    sequence=False, numSeg=1, fmt='.png', phase='Test',
-                                   seqLen=seqLen)
+                                   seqLen=seqLen, frame_div=True)
 
         val_loader = torch.utils.data.DataLoader(vid_seq_val, batch_size=valBatchSize,
                                 shuffle=False, num_workers=2, pin_memory=True)
@@ -166,14 +166,13 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         numCorrTrain = 0
         iterPerEpoch = 0
         model.classifier.train(True)
-        model.flowModel.layer4.train(True)
         for j, (inputFlow, inputFrame, targets) in enumerate(train_loader):
             train_iter += 1
             iterPerEpoch += 1
             optimizer_fn.zero_grad()
-            inputVariableFlow = Variable(inputFlow.cuda())
-            inputVariableFrame = Variable(inputFrame.permute(1, 0, 2, 3, 4).cuda())
-            labelVariable = Variable(targets.cuda())
+            inputVariableFlow = inputFlow.permute(1, 0, 2, 3, 4).cuda()
+            inputVariableFrame = inputFrame.permute(1, 0, 2, 3, 4).cuda()
+            labelVariable = targets.cuda()
             output_label = model(inputVariableFlow, inputVariableFrame)
             loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
             loss.backward()
