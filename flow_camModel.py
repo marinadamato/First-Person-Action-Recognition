@@ -23,7 +23,7 @@ class attentionModel_flow(nn.Module):
         self.lstm_cell = MyConvLSTMCell(512, mem_size)
         self.avgpool = nn.AvgPool2d(7)
         self.dropout = nn.Dropout(0.7)
-        self.fc = nn.Linear(mem_size, self.num_classes)
+        self.fc_action = nn.Linear(mem_size, self.num_classes)
         self.classifier = nn.Sequential(self.dropout, self.fc)
 
     def forward(self, inputVariable_flow, inputVariable_rgb):
