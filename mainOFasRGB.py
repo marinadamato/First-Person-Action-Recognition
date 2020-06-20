@@ -28,7 +28,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         print('Dataset not found')
         sys.exit()
 
-    model_folder = os.path.join('./', outDir, dataset, 'NewtwoStream',stage)  # Dir for saving models and log files
+    model_folder = os.path.join('./', outDir, dataset, 'NewtwoStream',str(stage))  # Dir for saving models and log files
     # Create the dir
     if os.path.exists(model_folder):
         print('Dir {} exists!'.format(model_folder))
@@ -70,7 +70,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
                                 shuffle=False, num_workers=2, pin_memory=True)
         valSamples = vid_seq_val.__len__()
     if stage==3:
-        model = twoStreamAttentionModel(flowModel=flowModel, frameModel=rgbModel, stackSize=stackSize, memSize=memSize,
+        model = twoStreamAttentionModel(flowModel=flowModel, frameModel=rgbModel, memSize=memSize,
                                     num_classes=num_classes)
 
         
@@ -86,10 +86,10 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
 
     else:
         if stage==2:flowModel=''
-        model = attentionModel_flow(flowModel=flowModel, frameModel=rgbModel, stackSize=stackSize, memSize=memSize,
+        model = attentionModel_flow(flowModel=flowModel, frameModel=rgbModel, mem_size=memSize,
                                     num_classes=num_classes)
         for params in model.parameters():
-                params.requires_grad = False
+            params.requires_grad = False
             train_params = []
 
         if stage==2:
@@ -178,7 +178,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             loss.backward()
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
-             numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
+            numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
             epoch_loss += loss.item()
         avg_loss = epoch_loss / iterPerEpoch
         trainAccuracy = (numCorrTrain / trainSamples) * 100
@@ -203,7 +203,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
                     loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
                     val_loss_epoch += loss.item()
                     _, predicted = torch.max(output_label.data, 1)
-                   numCorr += torch.sum(predicted == labelVariable.data).data.item()
+                    numCorr += torch.sum(predicted == labelVariable.data).data.item()
                 val_accuracy = (numCorr / valSamples) * 100
                 avg_val_loss = val_loss_epoch / val_iter
                 print('Val Loss after {} epochs, loss = {}'.format(epoch + 1, avg_val_loss))
@@ -245,7 +245,7 @@ def __main__():
     parser.add_argument('--valBatchSize', type=int, default=32, help='Validation batch size')
     parser.add_argument('--numEpochs', type=int, default=250, help='Number of epochs')
     parser.add_argument('--lr', type=float, default=1e-2, help='Learning rate')
-    parser.add_argument('--stepSize', type=float, default=1, help='Learning rate decay step')
+    parser.add_argument('--stepSize', type=float, default=[25, 75, 150], nargs="+", help='Learning rate decay step')
     parser.add_argument('--decayRate', type=float, default=0.99, help='Learning rate decay rate')
     parser.add_argument('--memSize', type=int, default=512, help='ConvLSTM hidden state size')
     parser.add_argument('--stage', type=int, default=1, help='Stage of the network training process')
