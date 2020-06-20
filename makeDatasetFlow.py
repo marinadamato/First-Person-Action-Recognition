@@ -45,7 +45,7 @@ def gen_split(root_dir, stackSize, phase):
 
 class makeDataset(Dataset):
     def __init__(self, root_dir, spatial_transform=None, sequence=False, stackSize=5,
-                 train=True, numSeg = 1, fmt='.png', phase='train'):
+                 train=True, numSeg = 1, fmt='.png', phase='train',frame_div=False):
         """
         Args:
             root_dir (string): Directory with all the images.
@@ -60,7 +60,7 @@ class makeDataset(Dataset):
         self.stackSize = stackSize
         self.fmt = fmt
         self.phase = phase
-
+        self.frame_div=frame_div
     def __len__(self):
         return len(self.imagesX)
 
@@ -71,34 +71,30 @@ class makeDataset(Dataset):
         numFrame = self.numFrames[idx]
         inpSeqSegs = []
         self.spatial_transform.randomize_parameters()
-        if self.sequence is True:
-            if numFrame <= self.stackSize:
-                frameStart = np.ones(self.numSeg)
-            else:
-                frameStart = np.linspace(1, numFrame - self.stackSize + 1, self.numSeg, endpoint=False)
-            for startFrame in frameStart:
-                inpSeq = []
-                for k in range(self.stackSize):
-                    i = k + int(startFrame)
-                    fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
-                    img = Image.open(fl_name)
-                    inpSeq.append(self.spatial_transform(img.convert('L'), inv=True, flow=True))
-                    # fl_names.append(fl_name)
-                    fl_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
-                    img = Image.open(fl_name)
-                    inpSeq.append(self.spatial_transform(img.convert('L'), inv=False, flow=True))
-                inpSeqSegs.append(torch.stack(inpSeq, 0).squeeze())
-            inpSeqSegs = torch.stack(inpSeqSegs, 0)
-            return inpSeqSegs, label
+        
+        if numFrame <= self.stackSize:
+            startFrame = 1
         else:
-            if numFrame <= self.stackSize:
-                startFrame = 1
+            if self.phase == 'train':
+                startFrame = random.randint(1, numFrame - self.stackSize)
             else:
-                if self.phase == 'train':
-                    startFrame = random.randint(1, numFrame - self.stackSize)
-                else:
-                    startFrame = np.ceil((numFrame - self.stackSize)/2)
-            inpSeq = []
+                startFrame = np.ceil((numFrame - self.stackSize)/2)
+        inpSeq = []
+        inpSeqX = []
+        inpSeqY = []
+        if self.frame_div:
+            for k in range(self.stackSize):
+                i = k + int(startFrame)
+                fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
+                img = Image.open(fl_name)
+                inpSeqX.append(self.spatial_transform(img.convert('L'), inv=True, flow=True))
+                # fl_names.append(fl_name)
+                f1_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
+                img2 = Image.open(f1_name)
+                inpSeqY.append(self.spatial_transform(img2.convert('L'), inv=False, flow=True))
+            inpSeqSegs = torch.stack([torch.stack(inpSeqX, 0).squeeze(1),torch.stack(inpSeqY, 0).squeeze(1)],0).permute(1,0,2,3)
+
+        else:
             for k in range(self.stackSize):
                 i = k + int(startFrame)
                 fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
@@ -109,4 +105,4 @@ class makeDataset(Dataset):
                 img = Image.open(fl_name)
                 inpSeq.append(self.spatial_transform(img.convert('L'), inv=False, flow=True))
             inpSeqSegs = torch.stack(inpSeq, 0).squeeze(1)
-            return inpSeqSegs, label#, fl_name
+        return inpSeqSegs, label#, fl_name
