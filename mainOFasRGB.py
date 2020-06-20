@@ -157,7 +157,11 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
     loss_fn = nn.CrossEntropyLoss()
     optimizer_fn = torch.optim.SGD(train_params, lr=lr1, momentum=0.9, weight_decay=5e-4)
 
-    optim_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_fn, step_size=decay_step, gamma=decay_factor)
+    if (type(decay_step) is list) and stage!=3:
+        optim_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer_fn, milestones=decay_step, gamma=decay_factor)
+    elif stage==3:
+        optim_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_fn, step_size=decay_step, gamma=decay_factor)
+    else: raise "step size type error"
     train_iter = 0
 
     for epoch in range(numEpochs):
