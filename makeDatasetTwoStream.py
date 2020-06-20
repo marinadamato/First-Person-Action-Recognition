@@ -91,13 +91,12 @@ class makeDataset(Dataset):
         inpSeqX = []
         inpSeqY = []
         if self.frame_div:
-            for k in range(self.stackSize):
-                i = k + int(startFrame)
-                fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
+            for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
+                fl_name = vid_nameX + '/flow_x_' + str(int(np.floor(i))).zfill(5) + '.png'
                 img = Image.open(fl_name)
                 inpSeqX.append(self.spatial_transform(img.convert('L'), inv=True, flow=True))
                 # fl_names.append(fl_name)
-                f1_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
+                f1_name = vid_nameY + '/flow_y_' + str(int(np.floor(i))).zfill(5) + '.png'
                 img2 = Image.open(f1_name)
                 inpSeqY.append(self.spatial_transform(img2.convert('L'), inv=False, flow=True))
             inpSeqSegs = torch.stack([torch.stack(inpSeqX, 0).squeeze(1),torch.stack(inpSeqY, 0).squeeze(1)],0).permute(1,0,2,3)
