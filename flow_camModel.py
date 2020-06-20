@@ -19,21 +19,21 @@ class attentionModel_flow(nn.Module):
             raise "No RGB dict provided"
         self.flowResNet = flow_resnet.flow_resnet34(True, channels=2, num_classes=61)
         self.mem_size = mem_size
-        self.weight_softmax = self.flowResNet.fc.weight
+        self.weight_softmax = self.flowResNet.fc_action.weight
         self.lstm_cell = MyConvLSTMCell(512, mem_size)
         self.avgpool = nn.AvgPool2d(7)
         self.dropout = nn.Dropout(0.7)
-        self.fc_action = nn.Linear(mem_size, self.num_classes)
+        self.fc = nn.Linear(mem_size, self.num_classes)
         self.classifier = nn.Sequential(self.dropout, self.fc)
 
     def forward(self, inputVariable_flow, inputVariable_rgb):
-        state = (torch.zeros((inputVariable_flow.size(1), self.mem_size, 7, 7).cuda()),
-                 torch.zeros((inputVariable_flow.size(1), self.mem_size, 7, 7).cuda()))
+        state = (torch.zeros(inputVariable_flow.size(1), self.mem_size, 7, 7).cuda(),
+                    torch.zeros(inputVariable_flow.size(1), self.mem_size, 7, 7).cuda())
         #self.resNetRGB.train(False)
         for t in range(inputVariable_flow.size(0)):
-            logit, feature_conv = self.flowResNet(inputVariable_flow[t])
+            logit,_, feature_conv = self.flowResNet(inputVariable_flow[t])
             _, _, feature_convNBN = self.resNetRGB(inputVariable_rgb[t])
-            if self.attention == 1: 
+            if self.attention == 1:
                 bz, nc, h, w = feature_conv.size()
                 feature_conv1 = feature_conv.view(bz, nc, h*w)
                 probs, idxs = logit.sort(1, True)
