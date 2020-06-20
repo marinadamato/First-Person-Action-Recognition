@@ -75,4 +75,4 @@ def OnlyResNet(diction):
         if key[:7]=='resNet.': 
             res_key.append(key)
 
-    return {k: diction[k] for k in res_key}
+    return {k[7:]: diction[k] for k in res_key}
