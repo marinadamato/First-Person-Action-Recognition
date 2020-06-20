@@ -7,7 +7,7 @@ from MyConvLSTMCell import *
 
 
 class attentionModel(nn.Module):
-    def __init__(self, num_classes=61, mem_size=512, attention=True):
+    def __init__(self, num_classes=61, mem_size=512, attention=1):
         super(attentionModel, self).__init__()
         self.num_classes = num_classes
         self.attention = attention
