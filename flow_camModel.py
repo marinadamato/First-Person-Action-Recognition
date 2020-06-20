@@ -8,18 +8,16 @@ from MyConvLSTMCell import *
 
 
 class attentionModel_flow(nn.Module):
-    def __init__(self, flowModel='', frameModel='', num_classes=61, mem_size=512, attention=True):
+    def __init__(self, flowModel='', frameModel='', num_classes=61, mem_size=512, attention=1):
         super(attentionModel_flow, self).__init__()
         self.num_classes = num_classes
         self.attention = attention
         self.resNetRGB = resnetMod.resnet34(True, True)
         if frameModel!='':
-            self.resNetRGB.load_state_dict(torch.load(frameModel))
+            self.resNetRGB.load_state_dict(OnlyResNet(torch.load(frameModel)))
         else:
             raise "No RGB dict provided"
         self.flowResNet = flow_resnet.flow_resnet34(True, channels=2, num_classes=61)
-        if flowModel != '':
-            self.flowResNet.load_state_dict(torch.load(flowModel)))
         self.mem_size = mem_size
         self.weight_softmax = self.resNet.fc.weight
         self.lstm_cell = MyConvLSTMCell(512, mem_size)
@@ -54,7 +52,7 @@ class attentionModel_flow(nn.Module):
 class twoStreamAttentionModel(nn.Module):
     def __init__(self, flowModel='', frameModel='', stackSize=5, memSize=512, num_classes=61):
         super(twoStreamAttentionModel, self).__init__()
-        self.flowModel = flow_resnet34(False, channels=2*stackSize, num_classes=num_classes)
+        self.flowModel = attentionModel_flow(frameModel='', num_classes=num_classes, mem_size=mem_size)
         if flowModel != '':
             self.flowModel.load_state_dict(torch.load(flowModel))
         self.frameModel = attentionModel(num_classes, memSize)
@@ -69,3 +67,12 @@ class twoStreamAttentionModel(nn.Module):
         _, rgbFeats = self.frameModel(inputVariableFrame)
         twoStreamFeats = torch.cat((flowFeats, rgbFeats), 1)
         return self.classifier(twoStreamFeats)
+
+
+def OnlyResNet(diction):
+    res_key=[]
+    for key in diction.keys():
+        if key[:7]=='resNet.': 
+            res_key.append(key)
+
+    return {k: diction[k] for k in res_key}
