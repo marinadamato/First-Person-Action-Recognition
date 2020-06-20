@@ -19,7 +19,7 @@ class attentionModel_flow(nn.Module):
             raise "No RGB dict provided"
         self.flowResNet = flow_resnet.flow_resnet34(True, channels=2, num_classes=61)
         self.mem_size = mem_size
-        self.weight_softmax = self.resNet.fc.weight
+        self.weight_softmax = self.flowResNet.fc.weight
         self.lstm_cell = MyConvLSTMCell(512, mem_size)
         self.avgpool = nn.AvgPool2d(7)
         self.dropout = nn.Dropout(0.7)
