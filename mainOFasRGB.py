@@ -165,6 +165,21 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
     train_iter = 0
 
     for epoch in range(numEpochs):
+        if stage ==1:
+            model.lstm_cell.train(True)
+     
+        elif stage==2:
+            model.flowResNet.layer4[0].conv1.train(True)
+            model.flowResNet.layer4[0].conv2.train(True)
+            model.flowResNet.layer4[1].conv1.train(True)
+            model.flowResNet.layer4[1].conv2.train(True)
+            model.flowResNet.layer4[2].conv1.train(True)
+            model.flowResNet.layer4[2].conv2.train(True)
+            model.flowResNet.fc.train(True)
+            model.lstm_cell.train(True)
+   
+        model.classifier.train(True)
+
         optim_scheduler.step()
         epoch_loss = 0
         numCorrTrain = 0
@@ -177,8 +192,13 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             inputVariableFlow = inputFlow.permute(1, 0, 2, 3, 4).cuda()
             inputVariableFrame = inputFrame.permute(1, 0, 2, 3, 4).cuda()
             labelVariable = targets.cuda()
-            output_label = model(inputVariableFlow, inputVariableFrame)
-            loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
+            if stage!=3:
+                output_label,_ = model(inputVariableFlow, inputVariableFrame)
+
+                loss = loss_fn(output_label, labelVariable)
+            else:
+                output_label = model(inputVariableFlow, inputVariableFrame)
+                loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
             loss.backward()
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
@@ -200,11 +220,17 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
                 numCorr = 0
                 for j, (inputFlow, inputFrame, targets) in enumerate(val_loader):
                     val_iter += 1
-                    inputVariableFlow = Variable(inputFlow.cuda())
+                    inputVariableFlow = Variable(inputFlow.permute(1, 0, 2, 3, 4).cuda())
                     inputVariableFrame = Variable(inputFrame.permute(1, 0, 2, 3, 4).cuda())
                     labelVariable = Variable(targets.cuda())
-                    output_label = model(inputVariableFlow, inputVariableFrame)
-                    loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
+
+                    if stage!=3:
+                        output_label,_ = model(inputVariableFlow, inputVariableFrame)
+
+                        loss = loss_fn(output_label, labelVariable)
+                    else:
+                        output_label = model(inputVariableFlow, inputVariableFrame)
+                        loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
                     val_loss_epoch += loss.item()
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += torch.sum(predicted == labelVariable.data).data.item()
