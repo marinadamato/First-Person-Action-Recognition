@@ -17,7 +17,9 @@ class attentionModel_flow(nn.Module):
             self.resNetRGB.load_state_dict(OnlyResNet(torch.load(frameModel)))
         else:
             raise "No RGB dict provided"
-        self.flowResNet = flow_resnet.flow_resnet34(True, channels=2, num_classes=61)
+        self.flowResNet = flow_resnet.flow_resnet34(True, channels=2, num_classes=num_classes)
+        if flowModel!='':
+            self.flowResNet.load_state_dict(torch.load(flowModel))
         self.mem_size = mem_size
         self.weight_softmax = self.flowResNet.fc_action.weight
         self.lstm_cell = MyConvLSTMCell(512, mem_size)
