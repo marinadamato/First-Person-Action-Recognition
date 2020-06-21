@@ -11,6 +11,8 @@ import argparse
 
 import sys
 
+import flow_resnet
+
 
 def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetDir, valDatasetDir, outDir,
              trainBatchSize, valBatchSize, lr1, numEpochs, decay_step, decay_factor):
@@ -83,58 +85,56 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         for params in model.classifier.parameters():
             params.requires_grad = True
             train_params += [params]
+        model.classifier.train(True)
 
-    else:
-        if stage==2:flowModel=''
+    elif stage==2:
+        
         model = attentionModel_flow(flowModel=flowModel, frameModel=rgbModel, mem_size=memSize,
                                     num_classes=num_classes)
+        model.flowResNet.fc_action=nn.Linear(512, 1000)
+        train_params=[]
+        model.train(False)
         for params in model.parameters():
             params.requires_grad = False
-            train_params = []
+        #
+        for params in model.flowResNet.layer4[0].conv1.parameters():
+            params.requires_grad = True
+            train_params += [params]
 
-        if stage==2:
+        for params in model.flowResNet.layer4[0].conv2.parameters():
+            params.requires_grad = True
+            train_params += [params]
 
-            model.load_state_dict(torch.load(flowModel))
-            model.train(False)
-            for params in model.parameters():
-                params.requires_grad = False
-            #
-            for params in model.flowResNet.layer4[0].conv1.parameters():
-                params.requires_grad = True
-                train_params += [params]
+        for params in model.flowResNet.layer4[1].conv1.parameters():
+            params.requires_grad = True
+            train_params += [params]
 
-            for params in model.flowResNet.layer4[0].conv2.parameters():
-                params.requires_grad = True
-                train_params += [params]
+        for params in model.flowResNet.layer4[1].conv2.parameters():
+            params.requires_grad = True
+            train_params += [params]
 
-            for params in model.flowResNet.layer4[1].conv1.parameters():
-                params.requires_grad = True
-                train_params += [params]
+        for params in model.flowResNet.layer4[2].conv1.parameters():
+            params.requires_grad = True
+            train_params += [params]
+        #
+        for params in model.flowResNet.layer4[2].conv2.parameters():
+            params.requires_grad = True
+            train_params += [params]
+        #
+        for params in model.flowResNet.fc_action.parameters():
+            params.requires_grad = True
+            train_params += [params]
 
-            for params in model.flowResNet.layer4[1].conv2.parameters():
-                params.requires_grad = True
-                train_params += [params]
-
-            for params in model.flowResNet.layer4[2].conv1.parameters():
-                params.requires_grad = True
-                train_params += [params]
-            #
-            for params in model.flowResNet.layer4[2].conv2.parameters():
-                params.requires_grad = True
-                train_params += [params]
-            #
-            for params in model.flowResNet.fc.parameters():
-                params.requires_grad = True
-                train_params += [params]
-
-            model.flowResNet.layer4[0].conv1.train(True)
-            model.flowResNet.layer4[0].conv2.train(True)
-            model.flowResNet.layer4[1].conv1.train(True)
-            model.flowResNet.layer4[1].conv2.train(True)
-            model.flowResNet.layer4[2].conv1.train(True)
-            model.flowResNet.layer4[2].conv2.train(True)
-            model.flowResNet.fc.train(True)
-        
+        model.flowResNet.layer4[0].conv1.train(True)
+        model.flowResNet.layer4[0].conv2.train(True)
+        model.flowResNet.layer4[1].conv1.train(True)
+        model.flowResNet.layer4[1].conv2.train(True)
+        model.flowResNet.layer4[2].conv1.train(True)
+        model.flowResNet.layer4[2].conv2.train(True)
+        model.flowResNet.fc_action.train(True)
+        model.classifier.train(True)
+        model.lstm_cell.train(True)
+    
         
         for params in model.lstm_cell.parameters():
             params.requires_grad = True
@@ -143,11 +143,19 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         for params in model.classifier.parameters():
             params.requires_grad = True
             train_params += [params]
+    elif stage==1:
 
+        model = flow_resnet.flow_resnet34(True, channels=2, num_classes=61)
+        train_params=[]
+        model.train(True)
+        
+        for params in model.parameters():
+            params.requires_grad = True
+            train_params += [params]
 
-        model.lstm_cell.train(True)
+        
 
-    model.classifier.train(True)
+    
 
     model.cuda()
 
@@ -166,7 +174,8 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
 
     for epoch in range(numEpochs):
         if stage ==1:
-            model.lstm_cell.train(True)
+            model.train(True)
+            
      
         elif stage==2:
             model.flowResNet.layer4[0].conv1.train(True)
@@ -175,16 +184,17 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             model.flowResNet.layer4[1].conv2.train(True)
             model.flowResNet.layer4[2].conv1.train(True)
             model.flowResNet.layer4[2].conv2.train(True)
-            model.flowResNet.fc.train(True)
+            model.flowResNet.fc_action.train(True)
             model.lstm_cell.train(True)
-   
-        model.classifier.train(True)
+            model.classifier.train(True)
+        elif stage==3:
+            model.classifier.train(True)
 
-        optim_scheduler.step()
+        
         epoch_loss = 0
         numCorrTrain = 0
         iterPerEpoch = 0
-        model.classifier.train(True)
+        
         for j, (inputFlow, inputFrame, targets) in enumerate(train_loader):
             train_iter += 1
             iterPerEpoch += 1
@@ -192,18 +202,25 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             inputVariableFlow = inputFlow.permute(1, 0, 2, 3, 4).cuda()
             inputVariableFrame = inputFrame.permute(1, 0, 2, 3, 4).cuda()
             labelVariable = targets.cuda()
-            if stage!=3:
-                output_label,_ = model(inputVariableFlow, inputVariableFrame)
-
-                loss = loss_fn(output_label, labelVariable)
+            if stage==1:
+                frameLoss= 0
+                for t in range(inputVariableFlow.size(0)):
+                    output_label,_,_ = model(inputVariableFlow[t])
+                    loss = loss_fn(output_label, labelVariable)
+                    loss.backward(retain_graph=True)
+                    frameLoss+=loss.item()
+                
+                
             else:
-                output_label = model(inputVariableFlow, inputVariableFrame)
-                loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
-            loss.backward()
+                output_label,_ = model(inputVariableFlow, inputVariableFrame)
+                loss = loss_fn(output_label, labelVariable)
+                loss.backward()
+            
             optimizer_fn.step()
             _, predicted = torch.max(output_label.data, 1)
             numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
-            epoch_loss += loss.item()
+            if stage==2:epoch_loss += loss.item()
+            elif stage==1:epoch_loss +=frameLoss
         avg_loss = epoch_loss / iterPerEpoch
         trainAccuracy = (numCorrTrain / trainSamples) * 100
         print('Average training loss after {} epoch = {} '.format(epoch + 1, avg_loss))
@@ -224,14 +241,21 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
                     inputVariableFrame = Variable(inputFrame.permute(1, 0, 2, 3, 4).cuda())
                     labelVariable = Variable(targets.cuda())
 
-                    if stage!=3:
-                        output_label,_ = model(inputVariableFlow, inputVariableFrame)
-
-                        loss = loss_fn(output_label, labelVariable)
+                    if stage==1:
+                        frameLoss= 0
+                        for t in range(inputVariableFlow.size(0)):
+                            output_label,_,_ = model(inputVariableFlow[t])
+                            loss = loss_fn(output_label, labelVariable)
+                            frameLoss+=loss.item()
+      
                     else:
-                        output_label = model(inputVariableFlow, inputVariableFrame)
-                        loss = loss_fn(torch.log_softmax(output_label, dim=1), labelVariable)
-                    val_loss_epoch += loss.item()
+                        output_label,_ = model(inputVariableFlow, inputVariableFrame)
+                        loss = loss_fn(output_label, labelVariable)
+                        loss.backward()
+                    
+                    optimizer_fn.step()
+                    if stage==2:val_loss_epoch += loss.item()
+                    elif stage==1:val_loss_epoch +=frameLoss
                     _, predicted = torch.max(output_label.data, 1)
                     numCorr += torch.sum(predicted == labelVariable.data).data.item()
                 val_accuracy = (numCorr / valSamples) * 100
@@ -250,6 +274,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             if (epoch + 1) % 10 == 0:
                 save_path_model = (model_folder + '/model_twoStream_state_dict_epoch' + str(epoch + 1) + '.pth')
                 torch.save(model.state_dict(), save_path_model)
+        optim_scheduler.step()
     train_log_loss.close()
     train_log_acc.close()
     val_log_acc.close()
