@@ -88,19 +88,16 @@ class makeDataset(Dataset):
             else:
                 startFrame = np.ceil((numFrame - self.stackSize)/2)
         inpSeq = []
-        inpSeqX = []
-        inpSeqY = []
         if self.frame_div:
             for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
                 fl_name = vid_nameX + '/flow_x_' + str(int(np.floor(i))).zfill(5) + '.png'
-                img = Image.open(fl_name)
-                inpSeqX.append(self.spatial_transform(img.convert('L'), inv=True, flow=True))
-                # fl_names.append(fl_name)
+                imgX = Image.open(fl_name)
                 f1_name = vid_nameY + '/flow_y_' + str(int(np.floor(i))).zfill(5) + '.png'
-                img2 = Image.open(f1_name)
-                inpSeqY.append(self.spatial_transform(img2.convert('L'), inv=False, flow=True))
-            inpSeqSegs = torch.stack([torch.stack(inpSeqX, 0).squeeze(1),torch.stack(inpSeqY, 0).squeeze(1)],0).permute(1,0,2,3)
-
+                imgY = Image.open(f1_name)
+                flow_2_channel=torch.stack([self.spatial_transform(imgX.convert('L'), inv=True, flow=True),
+                                            self.spatial_transform(imgY.convert('L'), inv=False, flow=True)],0)
+                inpSeq.append(flow_2_channel.squeeze(1))
+            inpSeqSegs = torch.stack(inpSeq,0)
         else:
             
             for k in range(self.stackSize):
