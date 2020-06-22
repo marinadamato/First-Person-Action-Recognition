@@ -251,7 +251,6 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
                     else:
                         output_label,_ = model(inputVariableFlow, inputVariableFrame)
                         loss = loss_fn(output_label, labelVariable)
-                        loss.backward()
                     
                     optimizer_fn.step()
                     if stage==2:val_loss_epoch += loss.item()
