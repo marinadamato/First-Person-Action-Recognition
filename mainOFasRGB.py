@@ -173,6 +173,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
     train_iter = 0
 
     for epoch in range(numEpochs):
+        optim_scheduler.step()
         if stage ==1:
             model.train(True)
             
@@ -251,8 +252,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
                     else:
                         output_label,_ = model(inputVariableFlow, inputVariableFrame)
                         loss = loss_fn(output_label, labelVariable)
-                    
-                    optimizer_fn.step()
+              
                     if stage==2:val_loss_epoch += loss.item()
                     elif stage==1:val_loss_epoch +=frameLoss
                     _, predicted = torch.max(output_label.data, 1)
@@ -273,7 +273,6 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             if (epoch + 1) % 10 == 0:
                 save_path_model = (model_folder + '/model_twoStream_state_dict_epoch' + str(epoch + 1) + '.pth')
                 torch.save(model.state_dict(), save_path_model)
-        optim_scheduler.step()
     train_log_loss.close()
     train_log_acc.close()
     val_log_acc.close()
