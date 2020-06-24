@@ -1,5 +1,5 @@
-from attentionmodel_ml import attentionModel_ml
 import torch
+from resnetMod import resnet34
 from flow_resnet import flow_resnet34
 import torch.nn as nn
 from torch.nn import functional as F
@@ -38,7 +38,7 @@ class colorization(nn.Module):
     def __init__(self,num_classes=61):
         
         super(colorization, self).__init__()
-        self.conv1 = nn.Conv2d(10, 64, kernel_size=7, stride=2, padding=3,
+        self.conv1 = nn.Conv2d(2, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
         self.i=0
         self.bn1 = nn.BatchNorm2d(64)
@@ -48,34 +48,35 @@ class colorization(nn.Module):
         for i in range(4):
             self.residual_block.append(residual_block())
         self.residual_block = nn.Sequential(*self.residual_block)
-        self.conv2 = nn.Conv2d(64, 15, kernel_size= 1, stride=1, padding=0, bias=False)
-        self.deconv= nn.ConvTranspose2d(15, 15, 8, stride=4, padding=0, groups=1, bias=False)
-        self.flow_resnet = flow_resnet34(True, channels=15, num_classes=num_classes)
+        self.conv2 = nn.Conv2d(64, 3, kernel_size= 1, stride=1, padding=0, bias=False)
+        self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=0, groups=1, bias=False)
+        self.RGBnet = attentionModel(num_classes=num_classes, mem_size=512)
     
     def forward(self,inputVariable):
         flow_list =[]
-         
-        x=self.conv1(inputVariable)
-        
-        x=self.bn1(x) 
-        x=self.relu(x) 
-        x=self.maxpool(x)
-        
-        
-        x=self.residual_block(x)
+        for t in range(inputVariable.size(0)):
+            x=self.conv1(inputVariable[t])
+            
+            x=self.bn1(x) 
+            x=self.relu(x) 
+            x=self.maxpool(x)
+            
+            
+            x=self.residual_block(x)
 
-        x=self.conv2(x) 
-        x=self.deconv(x)
+            x=self.conv2(x) 
+            x=self.deconv(x)
+            flow_list.append(x)
+        flow_list = torch.stack(flow_list, 0)
         
-        
-        if self.i==25:
-            T=x[0][0:3].data
-            save_image(inputVariable[0][0], 'x.jpg')
-            save_image(inputVariable[0][1], 'y.jpg')
-            save_image(255*T, "color.jpg")
+        if self.i==45:
+            T=flow_list[0][0].data
+            save_image(inputVariable[0][0][0], 'x.jpg')
+            save_image(inputVariable[0][0][1], 'y.jpg')
+            save_image(T, "color.jpg")
             print('new image')
             self.i=0
         self.i+=1
-        x=self.flow_resnet(x)
+        x=self.RGBnet(flow_list)
         return x
         
