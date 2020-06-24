@@ -8,7 +8,7 @@ import glob
 import sys
 
 
-def gen_split(root_dir, stackSize, phase):
+def gen_split(root_dir, stackSize, seqLen, frame_div, phase):
     DatasetX = []
     DatasetY = []
     DatasetF = []
@@ -34,16 +34,28 @@ def gen_split(root_dir, stackSize, phase):
                             numFrames = len(glob.glob1(inst_dir, '*.png'))
                             if (original_dir == 'processed_frames2'):
                                 numFrames = len(glob.glob1(inst_dir+'/rgb', '*.png'))
-                            if numFrames >= stackSize:
+                            if frame_div:
+                                if numFrames >= seqLen:
 
-                                if (original_dir == 'flow_x_processed'):
-                                    DatasetX.append(inst_dir)
-                                if (original_dir == 'flow_y_processed'):
-                                    DatasetY.append(inst_dir)
-                                if (original_dir == 'processed_frames2'):   
-                                    DatasetF.append(inst_dir+'/rgb')
-                                    Labels.append(class_id)
-                                NumFrames.append(numFrames)
+                                    if (original_dir == 'flow_x_processed'):
+                                        DatasetX.append(inst_dir)
+                                    if (original_dir == 'flow_y_processed'):
+                                        DatasetY.append(inst_dir)
+                                    if (original_dir == 'processed_frames2'):   
+                                        DatasetF.append(inst_dir+'/rgb')
+                                        Labels.append(class_id)
+                                    NumFrames.append(numFrames)
+                            else:
+                                if numFrames >= stackSize:
+
+                                    if (original_dir == 'flow_x_processed'):
+                                        DatasetX.append(inst_dir)
+                                    if (original_dir == 'flow_y_processed'):
+                                        DatasetY.append(inst_dir)
+                                    if (original_dir == 'processed_frames2'):   
+                                        DatasetF.append(inst_dir+'/rgb')
+                                        Labels.append(class_id)
+                                    NumFrames.append(numFrames)
                     class_id += 1
     return DatasetX, DatasetY, DatasetF, Labels, NumFrames
 
@@ -58,7 +70,7 @@ class makeDataset(Dataset):
         """
 
         self.imagesX, self.imagesY, self.imagesF, self.labels, self.numFrames = gen_split(
-            root_dir, stackSize, phase)
+            root_dir, stackSize, seqLen, frame_div, phase)
         self.spatial_transform = spatial_transform
         self.train = train
         self.numSeg = numSeg
@@ -80,16 +92,18 @@ class makeDataset(Dataset):
         numFrame = self.numFrames[idx]
         inpSeqSegs = []
         self.spatial_transform.randomize_parameters()
-        if numFrame <= self.stackSize:
-            startFrame = 1
-        else:
-            if self.phase == 'train':
-                startFrame = random.randint(1, numFrame - self.stackSize)
-            else:
-                startFrame = np.ceil((numFrame - self.stackSize)/2)
+        
         inpSeq = []
         if self.frame_div:
-            for i in np.linspace(1, numFrame, self.seqLen, endpoint=False):
+            if numFrame <= self.seqLen:
+                startFrame = 1
+            else:
+                if self.phase == 'train':
+                    startFrame = random.randint(1, numFrame - self.seqLen)
+                else:
+                    startFrame = np.ceil((numFrame - self.seqLen)/2)
+            for k in range(self.seqLen):
+                i = k + int(startFrame)
                 fl_name = vid_nameX + '/flow_x_' + str(int(np.floor(i))).zfill(5) + '.png'
                 imgX = Image.open(fl_name)
                 f1_name = vid_nameY + '/flow_y_' + str(int(np.floor(i))).zfill(5) + '.png'
@@ -99,6 +113,14 @@ class makeDataset(Dataset):
                 inpSeq.append(flow_2_channel.squeeze(1))
             inpSeqSegs = torch.stack(inpSeq,0)
         else:
+            if numFrame <= self.stackSize:
+                startFrame = 1
+            else:
+                if self.phase == 'train':
+                    startFrame = random.randint(1, numFrame - self.stackSize)
+                else:
+                    startFrame = np.ceil((numFrame - self.stackSize)/2)
+            
             
             for k in range(self.stackSize):
                 i = k + int(startFrame)
