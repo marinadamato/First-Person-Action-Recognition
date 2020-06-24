@@ -147,9 +147,6 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
     trainSamples = vid_seq_train.__len__()
     min_accuracy = 0
 
-    loss_fn = nn.CrossEntropyLoss()
-    optimizer_fn = torch.optim.SGD(train_params, lr=lr1, momentum=0.9, weight_decay=5e-4)
-
     train_iter = 0
 
     for epoch in range(numEpochs):
@@ -186,6 +183,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             _, predicted = torch.max(output_label.data, 1)
             numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
             epoch_loss += loss.item()
+        optim_scheduler.step()
         avg_loss = epoch_loss / iterPerEpoch
         trainAccuracy = (numCorrTrain / trainSamples) * 100
         print('Train: Epoch = {} | Loss = {} | Accuracy = {}'.format(epoch+1, avg_loss, trainAccuracy))
@@ -226,7 +224,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             if (epoch + 1) % 10 == 0:
                 save_path_model = (model_folder + '/model_twoStream_state_dict_epoch' + str(epoch + 1) + '.pth')
                 torch.save(model.state_dict(), save_path_model)
-        optim_scheduler.step()
+        
     train_log_loss.close()
     train_log_acc.close()
     val_log_acc.close()
