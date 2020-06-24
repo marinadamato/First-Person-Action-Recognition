@@ -49,7 +49,9 @@ class colorization(nn.Module):
             self.residual_block.append(residual_block())
         self.residual_block = nn.Sequential(*self.residual_block)
         self.conv2 = nn.Conv2d(64, 3, kernel_size= 1, stride=1, padding=0, bias=False)
-        self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=0, groups=1, bias=False)
+        #self.deconv= nn.ConvTranspose2d(3, 3, 8, stride=4, padding=0, groups=1, bias=False)
+        self.upS = nn.Sequential(nn.Upsample(224,mode='bilinear'),
+                    nn.Conv2d(3,3, kernel_size= 1, stride=1, padding=0, bias=False))
         self.RGBnet = attentionModel(num_classes=num_classes, mem_size=512)
     
     def forward(self,inputVariable):
@@ -65,7 +67,7 @@ class colorization(nn.Module):
             x=self.residual_block(x)
 
             x=self.conv2(x) 
-            x=self.deconv(x)
+            x=self.upS(x)
             flow_list.append(x)
         flow_list = torch.stack(flow_list, 0)
         
