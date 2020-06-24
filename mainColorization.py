@@ -68,46 +68,24 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
     print('Number of samples in the dataset: training = {} | validation = {}'.format(trainInstances, valInstances))
 
     model = colorization(num_classes=num_classes)
-    #model.load_state_dict(torch.load(color_dict),strict=False)
-    #model.attML.load_state_dict(torch.load(stage1_dict))
+    
+    model.RGBnet.load_state_dict(torch.load(stage1_dict))
     model.train(True)
-    #model.attML.train(False)
-    #model.attML.classifier.train(True)
+    model.RGBnet.train(False)
+    
     train_params =[]
-    '''for params in model.bn1.parameters():
-        params.requires_grad = True
-        train_params += [params]
-    for params in model.relu.parameters():
-        params.requires_grad = True
-        train_params += [params]
-    for params in model.maxpool.parameters():
-        params.requires_grad = True
-        train_params += [params]
-    for params in model.residual_block.parameters():
-        params.requires_grad = True
-        train_params += [params]
-    for params in model.conv2.parameters():
-        params.requires_grad = True
-        train_params += [params]
-    for params in model.deconv.parameters():
-        params.requires_grad = True
-        train_params += [params]
-
-    for params in model.attML.parameters():
-        params.requires_grad = False
-    for params in model.attML.classifier.parameters():
-        params.requires_grad = True
-        train_params += [params]'''
 
     for params in model.parameters():
         params.requires_grad = True
         train_params += [params]
+    for params in model.RGBnet.parameters():
+        params.requires_grad = False
 
     model.cuda()
 
     loss_fn = nn.CrossEntropyLoss()
 
-    optimizer_fn = torch.optim.SGD(train_params, lr=lr1, momentum=0.9, weight_decay=5e-4)
+    optimizer_fn = torch.optim.Adam(train_params, lr=lr1, weight_decay=5e-4)
 
     optim_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer_fn, milestones=decay_step, gamma=decay_factor)
 
@@ -120,13 +98,12 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
         trainSamples = 0
         iterPerEpoch = 0
         model.train(True)
-        #model.attML.train(False)
-        #model.attML.classifier.train(True)
+        model.RGBnet.train(False)
         writer.add_scalar('lr', optimizer_fn.param_groups[0]['lr'], epoch+1)
         for i, (inputVariable, labelVariable) in enumerate(train_loader):
             train_iter += 1
             iterPerEpoch += 1
-            inputVariable =inputVariable.cuda()
+            inputVariable =inputVariable.permute(1,0,2,3,4).cuda()
             labelVariable =labelVariable.cuda()
             optimizer_fn.zero_grad()
             trainSamples += inputVariable.size(0)
@@ -155,7 +132,7 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
                 for j, (inputVariable, labelVariable) in enumerate(val_loader):
                     val_iter += 1
                     val_samples += inputVariable.size(0)
-                    inputVariable =inputVariable.cuda()
+                    inputVariable =inputVariable.permute(1,0,2,3,4).cuda()
                     labelVariable =labelVariable.cuda()
                     output_label, _ = model(inputVariable)
                     val_loss = loss_fn(output_label, labelVariable)
