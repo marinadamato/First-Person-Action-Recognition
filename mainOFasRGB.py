@@ -111,7 +111,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             params.requires_grad = True
             train_params += [params]
         #
-        for params in model.flowResNet.fc.parameters():
+        for params in model.flowResNet.fc_action.parameters():
             params.requires_grad = True
             train_params += [params]
 
@@ -121,7 +121,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         model.flowResNet.layer4[1].conv2.train(True)
         model.flowResNet.layer4[2].conv1.train(True)
         model.flowResNet.layer4[2].conv2.train(True)
-        model.flowResNet.fc.train(True)
+        model.flowResNet.fc_action.train(True)
 
     for params in model.lstm_cell.parameters():
         params.requires_grad = True
@@ -160,7 +160,7 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
             model.flowResNet.layer4[1].conv2.train(True)
             model.flowResNet.layer4[2].conv1.train(True)
             model.flowResNet.layer4[2].conv2.train(True)
-            model.flowResNet.fc.train(True)
+            model.flowResNet.fc_action.train(True)
 
         
         epoch_loss = 0
