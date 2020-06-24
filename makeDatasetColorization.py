@@ -84,15 +84,26 @@ class makeDataset(Dataset):
      
         inpSeqF = []
         mapSeq = []
-        for i in np.linspace(1, numFrame, self.stackSize, endpoint=False):
+        if numFrame <= self.stackSize:
+            startFrame = 1
+        else:
+            if self.phase == 'train':
+                startFrame = random.randint(1, numFrame - self.stackSize)
+            else:
+                startFrame = np.ceil((numFrame - self.stackSize)/2)
+        
+        
+        for k in range(self.stackSize):
+            i = k + int(startFrame)
             fl_name = vid_nameX + '/flow_x_' + str(int(round(i))).zfill(5) + '.png'
-            img = Image.open(fl_name)
-            inpSeqX.append(self.spatial_transform(img.convert('L'), inv=True, flow=True))
+            imgX = Image.open(fl_name)
             # fl_names.append(fl_name)
             f1_name = vid_nameY + '/flow_y_' + str(int(round(i))).zfill(5) + '.png'
-            img2 = Image.open(f1_name)
-            inpSeqX.append(self.spatial_transform(img2.convert('L'), inv=False, flow=True))
+            imgY = Image.open(f1_name)
+            flow_2_channel=torch.stack([self.spatial_transform(imgX.convert('L'), inv=True, flow=True),
+                                        self.spatial_transform(imgY.convert('L'), inv=False, flow=True)],0)
+            inpSeqX.append(flow_2_channel.squeeze(1))
 
-        inpSeqSegs = torch.stack(inpSeqX, 0).squeeze(1)
+        inpSeqSegs = torch.stack(inpSeqX, 0)
         
         return inpSeqSegs, label
