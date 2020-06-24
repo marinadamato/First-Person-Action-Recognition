@@ -15,13 +15,8 @@ class attentionModel_flow(nn.Module):
         self.resNetRGB = resnetMod.resnet34(True, True)
         if frameModel!='':
             self.resNetRGB.load_state_dict(OnlyResNet(torch.load(frameModel)))
-        else:
-            raise "No RGB dict provided"
         self.flowResNet = flow_resnet.flow_resnet34(True, channels=2, num_classes=num_classes)
-        if flowModel!='':
-            self.flowResNet.load_state_dict(torch.load(flowModel))
         self.mem_size = mem_size
-        self.weight_softmax = self.flowResNet.fc_action.weight
         self.lstm_cell = MyConvLSTMCell(512, mem_size)
         self.avgpool = nn.AvgPool2d(7)
         self.dropout = nn.Dropout(0.7)
@@ -38,12 +33,9 @@ class attentionModel_flow(nn.Module):
             if self.attention == 1:
                 bz, nc, h, w = feature_conv.size()
                 feature_conv1 = feature_conv.view(bz, nc, h*w)
-                probs, idxs = logit.sort(1, True)
-                class_idx = idxs[:, 0]
-                cam = torch.bmm(self.weight_softmax[class_idx].unsqueeze(1), feature_conv1)
-                attentionMAP = torch.softmax(cam.squeeze(1), dim=1)
-                attentionMAP = attentionMAP.view(attentionMAP.size(0), 1, 7, 7)
-                attentionFeat = feature_convNBN * attentionMAP.expand_as(feature_conv)
+                feature_conv1 = torch.softmax(feature_conv1.squeeze(1), dim=2)
+                feature_conv1 = feature_conv1.view(feature_conv1.size(0), nc, 7, 7)
+                attentionFeat = feature_convNBN * feature_conv1
                 state = self.lstm_cell(attentionFeat, state)
             elif self.attention == 0:
                 state = self.lstm_cell(feature_conv, state)
