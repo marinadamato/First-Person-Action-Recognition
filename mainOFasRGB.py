@@ -87,41 +87,41 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         for params in model.parameters():
             params.requires_grad = False
         #
-        for params in model.resNet.layer4[0].conv1.parameters():
+        for params in model.flowResNet.layer4[0].conv1.parameters():
             params.requires_grad = True
             train_params += [params]
 
-        for params in model.resNet.layer4[0].conv2.parameters():
+        for params in model.flowResNet.layer4[0].conv2.parameters():
             params.requires_grad = True
             train_params += [params]
 
-        for params in model.resNet.layer4[1].conv1.parameters():
+        for params in model.flowResNet.layer4[1].conv1.parameters():
             params.requires_grad = True
             train_params += [params]
 
-        for params in model.resNet.layer4[1].conv2.parameters():
+        for params in model.flowResNet.layer4[1].conv2.parameters():
             params.requires_grad = True
             train_params += [params]
 
-        for params in model.resNet.layer4[2].conv1.parameters():
+        for params in model.flowResNet.layer4[2].conv1.parameters():
             params.requires_grad = True
             train_params += [params]
         #
-        for params in model.resNet.layer4[2].conv2.parameters():
+        for params in model.flowResNet.layer4[2].conv2.parameters():
             params.requires_grad = True
             train_params += [params]
         #
-        for params in model.resNet.fc.parameters():
+        for params in model.flowResNet.fc.parameters():
             params.requires_grad = True
             train_params += [params]
 
-        model.resNet.layer4[0].conv1.train(True)
-        model.resNet.layer4[0].conv2.train(True)
-        model.resNet.layer4[1].conv1.train(True)
-        model.resNet.layer4[1].conv2.train(True)
-        model.resNet.layer4[2].conv1.train(True)
-        model.resNet.layer4[2].conv2.train(True)
-        model.resNet.fc.train(True)
+        model.flowResNet.layer4[0].conv1.train(True)
+        model.flowResNet.layer4[0].conv2.train(True)
+        model.flowResNet.layer4[1].conv1.train(True)
+        model.flowResNet.layer4[1].conv2.train(True)
+        model.flowResNet.layer4[2].conv1.train(True)
+        model.flowResNet.layer4[2].conv2.train(True)
+        model.flowResNet.fc.train(True)
 
     for params in model.lstm_cell.parameters():
         params.requires_grad = True
@@ -154,13 +154,13 @@ def main_run(dataset, flowModel, rgbModel, stage, seqLen, memSize, trainDatasetD
         model.lstm_cell.train(True)
         model.classifier.train(True)
         if stage == 2:
-            model.resNet.layer4[0].conv1.train(True)
-            model.resNet.layer4[0].conv2.train(True)
-            model.resNet.layer4[1].conv1.train(True)
-            model.resNet.layer4[1].conv2.train(True)
-            model.resNet.layer4[2].conv1.train(True)
-            model.resNet.layer4[2].conv2.train(True)
-            model.resNet.fc.train(True)
+            model.flowResNet.layer4[0].conv1.train(True)
+            model.flowResNet.layer4[0].conv2.train(True)
+            model.flowResNet.layer4[1].conv1.train(True)
+            model.flowResNet.layer4[1].conv2.train(True)
+            model.flowResNet.layer4[2].conv1.train(True)
+            model.flowResNet.layer4[2].conv2.train(True)
+            model.flowResNet.fc.train(True)
 
         
         epoch_loss = 0
