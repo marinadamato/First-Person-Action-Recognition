@@ -131,12 +131,15 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
                 val_iter = 0
                 val_samples = 0
                 numCorr = 0
+                f_print=0
                 for j, (inputVariable, labelVariable) in enumerate(val_loader):
                     val_iter += 1
                     val_samples += inputVariable.size(0)
                     inputVariable =inputVariable.permute(1,0,2,3,4).cuda()
                     labelVariable =labelVariable.cuda()
-                    output_label, _ = model(inputVariable)
+                    if epoch%10==1:f_print=1
+                    output_label, _ = model(inputVariable,f_print)
+                    f_print=0
                     val_loss = loss_fn(output_label, labelVariable)
                     val_loss_epoch += val_loss.item()
                     _, predicted = torch.max(output_label.data, 1)
@@ -148,7 +151,7 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
                 writer.add_scalar('val/accuracy', val_accuracy, epoch + 1)
                 val_log_loss.write('Val Loss after {} epochs = {}\n'.format(epoch + 1, avg_val_loss))
                 val_log_acc.write('Val Accuracy after {} epochs = {}%\n'.format(epoch + 1, val_accuracy))
-                if val_accuracy > min_accuracy:
+                if epoch%10 ==0:
                     save_path_model = (model_folder + '/model_flow_state_dict.pth')
                     torch.save(model.state_dict(), save_path_model)
                     min_accuracy = val_accuracy
