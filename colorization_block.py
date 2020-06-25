@@ -41,7 +41,6 @@ class colorization(nn.Module):
         super(colorization, self).__init__()
         self.conv1 = nn.Conv2d(2, 64, kernel_size=7, stride=2, padding=3,
                                bias=False)
-        self.i=0
         self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.LeakyReLU(negative_slope=0.01, inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2)
@@ -56,7 +55,7 @@ class colorization(nn.Module):
         self.RGBnet = attentionModel(num_classes=num_classes, mem_size=512)
         self.k=0
 
-    def forward(self,inputVariable):
+    def forward(self,inputVariable,f_print=0):
         flow_list =[]
         for t in range(inputVariable.size(0)):
             x=self.conv1(inputVariable[t])
@@ -72,19 +71,16 @@ class colorization(nn.Module):
             x=self.upS(x)
             flow_list.append(x)
         flow_list = torch.stack(flow_list, 0)
-        
-        if self.i==100:
+        if f_print==1:
             self.k+=1
             path='/content/Images/'+str(self.k)
             os.mkdir(path)
             for j in range(flow_list.size(1)):
-                T=flow_list[8][j].data
-                save_image(inputVariable[8][j][0],path +'/e{}_x{}.jpg'.format(self.k,j))
-                save_image(inputVariable[8][j][1],path +'/e{}_y{}.jpg'.format(self.k,j))
+                T=flow_list[7][j].data
+                save_image(inputVariable[7][j][0],path +'/e{}_x{}.jpg'.format(self.k,j))
+                save_image(inputVariable[7][j][1],path +'/e{}_y{}.jpg'.format(self.k,j))
                 save_image(T,path+ "/e{}_color{}.jpg".format(self.k,j))
             print('new image')
-            self.i=0
-        self.i+=1
         x=self.RGBnet(flow_list)
         return x
         
