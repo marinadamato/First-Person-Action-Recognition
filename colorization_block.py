@@ -10,6 +10,7 @@ from PIL import Image
 import numpy as np
 from torchvision.utils import save_image
 from spatial_transforms import Normalize
+import os
 
 class residual_block(nn.Module):
     def __init__(self):
@@ -54,6 +55,7 @@ class colorization(nn.Module):
                     nn.Conv2d(3,3, kernel_size= 1, stride=1, padding=0, bias=False))
         self.RGBnet = attentionModel(num_classes=num_classes, mem_size=512)
         self.k=0
+
     def forward(self,inputVariable):
         flow_list =[]
         for t in range(inputVariable.size(0)):
@@ -73,11 +75,13 @@ class colorization(nn.Module):
         
         if self.i==100:
             self.k+=1
+            path='/content/Images/'+str(self.k)
+            os.mkdir(path)
             for j in range(flow_list.size(1)):
                 T=flow_list[8][j].data
-                save_image(inputVariable[8][j][0], 'e{}_x{}.jpg'.format(self.k,j))
-                save_image(inputVariable[8][j][1], 'e{}_y{}.jpg'.format(self.k,j))
-                save_image(T, "e{}_color{}.jpg".format(self.k,j))
+                save_image(inputVariable[8][j][0],path +'/e{}_x{}.jpg'.format(self.k,j))
+                save_image(inputVariable[8][j][1],path +'/e{}_y{}.jpg'.format(self.k,j))
+                save_image(T,path+ "/e{}_color{}.jpg".format(self.k,j))
             print('new image')
             self.i=0
         self.i+=1
