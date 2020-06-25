@@ -137,7 +137,7 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
                     val_samples += inputVariable.size(0)
                     inputVariable =inputVariable.permute(1,0,2,3,4).cuda()
                     labelVariable =labelVariable.cuda()
-                    if epoch%10==1 and j=0:f_print=1
+                    if epoch%10==1 and j==0:f_print=1
                     output_label, _ = model(inputVariable,f_print)
                     f_print=0
                     val_loss = loss_fn(output_label, labelVariable)
