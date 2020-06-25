@@ -114,6 +114,7 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
             _, predicted = torch.max(output_label.data, 1)
             numCorrTrain += torch.sum(predicted == labelVariable.data).data.item()
             epoch_loss += loss.item()
+            optimizer_fn.step()
         avg_loss = epoch_loss/iterPerEpoch
         trainAccuracy = (numCorrTrain / trainSamples) * 100
         print('Train: Epoch = {} | Loss = {} | Accuracy = {}'.format(epoch + 1, avg_loss, trainAccuracy))
@@ -121,7 +122,8 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
         writer.add_scalar('train/accuracy', trainAccuracy, epoch+1)
         train_log_loss.write('Training loss after {} epoch = {}\n'.format(epoch+1, avg_loss))
         train_log_acc.write('Training accuracy after {} epoch = {}\n'.format(epoch+1, trainAccuracy))
-        optimizer_fn.step()
+        
+        optim_scheduler.step()
         if valDir is not None:
             if (epoch+1) % 1 == 0:
                 model.train(False)
@@ -162,7 +164,7 @@ def main_run(dataset, trainDir, valDir, outDir, stackSize, trainBatchSize, valBa
     writer.export_scalars_to_json(model_folder + "/all_scalars.json")
     writer.close()
     
-    optim_scheduler.step()
+    
 
 
 def __main__():
